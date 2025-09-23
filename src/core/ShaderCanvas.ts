@@ -7,6 +7,7 @@ export class ShaderCanvas {
   private scene: THREE.Scene;
   private camera: THREE.OrthographicCamera;
   private renderer: THREE.WebGLRenderer;
+  private drawingBufferSize: THREE.Vector2;
   private material: THREE.ShaderMaterial;
   private clock = new THREE.Clock();
   private stats?: Stats;
@@ -58,14 +59,15 @@ export class ShaderCanvas {
     this.renderer = new THREE.WebGLRenderer({ canvas });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.drawingBufferSize = new THREE.Vector2();
+    this.renderer.getDrawingBufferSize(this.drawingBufferSize);
+    this.material.uniforms.uResolution.value.copy(this.drawingBufferSize);
 
     // Handle resize
     window.addEventListener("resize", () => {
       this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.material.uniforms.uResolution.value.set(
-        window.innerWidth,
-        window.innerHeight
-      );
+      this.renderer.getDrawingBufferSize(this.drawingBufferSize);
+      this.material.uniforms.uResolution.value.copy(this.drawingBufferSize);
     });
 
     // Handle mouse

@@ -23,9 +23,6 @@ importers:
       three:
         specifier: ^0.177.0
         version: 0.177.0
-      vanillatree:
-        specifier: ^0.0.3
-        version: 0.0.3
     devDependencies:
       '@rollup/pluginutils':
         specifier: ^5.3.0
@@ -437,9 +434,6 @@ packages:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
 
-  vanillatree@0.0.3:
-    resolution: {integrity: sha512-rlKwh8eT2pES/xLCKjnjYxSUdjOUF1rExufMPuZIs2lTwGaTAwrx1qNYfTsq6lUNckG0pv8aBS/BnXS4SjzIzQ==}
-
   vite-plugin-glsl@1.5.1:
     resolution: {integrity: sha512-kFI8rUItruG2Dfltyhr6tP3jlgCBGda2TnIvUodBHbpdQ7KT0NWyKpS1EqV47DoAl4woKzer7GWd1fiEvzf4nQ==}
     engines: {node: '>= 20.17.0', npm: '>= 10.8.3'}
@@ -784,8 +778,6 @@ snapshots:
   to-regex-range@5.0.1:
     dependencies:
       is-number: 7.0.0
-
-  vanillatree@0.0.3: {}
 
   vite-plugin-glsl@1.5.1(rollup@4.52.0)(vite@6.3.6):
     dependencies:

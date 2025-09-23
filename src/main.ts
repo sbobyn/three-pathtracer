@@ -6,7 +6,7 @@ import { initRootGUI, clearSketchFolder } from "./core/guiManager";
 const container = document.querySelector("#app") as HTMLElement;
 let currentRenderer: THREE.WebGLRenderer | null = null;
 
-const gui = new GUI({ title: "Sketchbook" });
+const gui = new GUI({ title: "Settings" });
 initRootGUI(gui);
 
 const sketches = import.meta.glob("./sketches/**/*.ts", {

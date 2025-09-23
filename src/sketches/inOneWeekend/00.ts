@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { ShaderCanvas } from "../core/ShaderCanvas";
-import fragShader from "./shaders/shaderCanvasExample.fs";
+import { ShaderCanvas } from "../../core/ShaderCanvas";
+import fragShader from "./shaders/helloWorld.fs";
 
 export default function (): THREE.WebGLRenderer {
   const shaderDemo = new ShaderCanvas({
