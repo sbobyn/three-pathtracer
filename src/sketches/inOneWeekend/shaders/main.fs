@@ -7,7 +7,7 @@ struct Ray {
     vec3 direction;
 };
 
-vec3 at(Ray r, float t) {
+vec3 rayAt(Ray r, float t) {
     return r.origin + t * r.direction;
 }
 
@@ -20,27 +20,89 @@ struct Sphere {
     float radius;
 };
 
-float hitSphere(Sphere s, Ray r) {
+struct Hit {
+    float t;
+    vec3 position;
+    vec3 normal;
+    bool frontFace;
+};
+
+struct Interval {
+    float min;
+    float max;
+};
+
+bool intervalSurrounds(Interval i, float x) {
+    return i.min < x && x < i.max;
+}
+
+#define MAX_SPHERES 100
+struct World {
+    Sphere spheres[MAX_SPHERES];
+    int numSpheres;
+};
+
+void setFaceNormal(Ray ray, vec3 outwardNormal, out Hit hit) {
+    hit.frontFace = dot(ray.direction, outwardNormal) < 0.0;
+    hit.normal = hit.frontFace ? outwardNormal : -outwardNormal;
+}
+
+bool hitSphere(Sphere s, Ray r, Interval rayInt, out Hit hit) {
     vec3 toSphere = s.position - r.origin;
     float a = lengthSquared(r.direction);
     float h = dot(r.direction, toSphere);
     float c = lengthSquared(toSphere) - s.radius * s.radius;
-    float discriminant = h * h - a * c;
 
+    float discriminant = h * h - a * c;
     if (discriminant < 0.) {
-        return -1.;
+        return false;
     }
 
-    return (h - sqrt(discriminant)) / a;
+    float sqrtD = sqrt(discriminant);
+
+    // find nearest root in accepted range
+    float root = (h - sqrtD) / a;
+    if (!intervalSurrounds(rayInt, root)) { // no hit, try other root
+        root = (h + sqrtD) / a;
+        if (!intervalSurrounds(rayInt, root)) { // no hit
+            return false;
+        }
+    }
+
+    hit.t = root;
+    hit.position = rayAt(r, root);
+
+    vec3 outwardN = (hit.position - s.position) / s.radius;
+    setFaceNormal(r, outwardN, hit);
+    return true;
 }
 
-vec3 rayColor(Ray r) {
-    Sphere s = Sphere(vec3(0, 0, -1), 0.5);
-    float t = hitSphere(s, r);
+bool hitWorld(World world, Ray ray, Interval rayInt, out Hit hit) {
+    Hit tempHit;
+    bool hitAnything = false;
+    float closestSoFar = rayInt.max;
 
-    if (t > 0.) {
-        vec3 N = normalize(at(r, t) - s.position);
-        return 0.5 * (N + 1.);
+    for (int i = 0; i < world.numSpheres; i++) {
+        Sphere sphere = world.spheres[i];
+        rayInt.max = closestSoFar;
+
+        if (hitSphere(sphere, ray, rayInt, tempHit)) {
+            hitAnything = true;
+            closestSoFar = tempHit.t;
+            hit = tempHit;
+        }
+    }
+
+    return hitAnything;
+}
+
+vec3 rayColor(Ray r, World w) {
+    Hit hit;
+    Interval rayInt = Interval(0.0001, 10000.);
+    bool didHit = hitWorld(w, r, rayInt, hit);
+
+    if (didHit) {
+        return 0.5 * (hit.normal + 1.);
     }
 
     vec3 unitDir = normalize(r.direction);
@@ -60,8 +122,16 @@ void main() {
 
     vec3 rayDir = normalize(cameraPos - vec3(uv, focalLength));
 
-    Ray r = Ray(cameraPos, rayDir);
+    Ray ray = Ray(cameraPos, rayDir);
 
-    vec3 color = rayColor(r);
+    Sphere sphere1 = Sphere(vec3(0, 0, -1), 0.5);
+    Sphere sphere2 = Sphere(vec3(0.0, -100.5, -1.0), 100.);
+
+    World world;
+    world.spheres[0] = sphere1;
+    world.spheres[1] = sphere2;
+    world.numSpheres = 2;
+
+    vec3 color = rayColor(ray, world);
     gl_FragColor = vec4(color, 1.0);
 }
