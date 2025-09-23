@@ -11,6 +11,10 @@ vec3 at(Ray r, float t) {
     return r.origin + t * r.direction;
 }
 
+float lengthSquared(vec3 a) {
+    return dot(a, a);
+}
+
 struct Sphere {
     vec3 position;
     float radius;
@@ -18,16 +22,16 @@ struct Sphere {
 
 float hitSphere(Sphere s, Ray r) {
     vec3 toSphere = s.position - r.origin;
-    float a = dot(r.direction, r.direction);
-    float b = -2. * dot(r.direction, toSphere);
-    float c = dot(toSphere, toSphere) - s.radius * s.radius;
-    float discriminant = b * b - 4. * a * c;
+    float a = lengthSquared(r.direction);
+    float h = dot(r.direction, toSphere);
+    float c = lengthSquared(toSphere) - s.radius * s.radius;
+    float discriminant = h * h - a * c;
 
     if (discriminant < 0.) {
         return -1.;
     }
 
-    return (-b - sqrt(discriminant)) / (2. * a);
+    return (h - sqrt(discriminant)) / a;
 }
 
 vec3 rayColor(Ray r) {
