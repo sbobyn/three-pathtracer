@@ -7,7 +7,26 @@ struct Ray {
     vec3 direction;
 };
 
+struct Sphere {
+    vec3 position;
+    float radius;
+};
+
+bool hitSphere(Sphere s, Ray r) {
+    vec3 toSphere = s.position - r.origin;
+    float a = dot(r.direction, r.direction);
+    float b = -2. * dot(r.direction, toSphere);
+    float c = dot(toSphere, toSphere) - s.radius * s.radius;
+    float discr = b * b - 4. * a * c;
+    return discr > 0.;
+}
+
 vec3 rayColor(Ray r) {
+    Sphere s = Sphere(vec3(0, 0, -1), 0.5);
+    if (hitSphere(s, r)) {
+        return vec3(1, 0, 0);
+    }
+
     vec3 unitDir = normalize(r.direction);
     float a = 0.5 * (unitDir.y + 1.0);
 
