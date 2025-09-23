@@ -7,24 +7,36 @@ struct Ray {
     vec3 direction;
 };
 
+vec3 at(Ray r, float t) {
+    return r.origin + t * r.direction;
+}
+
 struct Sphere {
     vec3 position;
     float radius;
 };
 
-bool hitSphere(Sphere s, Ray r) {
+float hitSphere(Sphere s, Ray r) {
     vec3 toSphere = s.position - r.origin;
     float a = dot(r.direction, r.direction);
     float b = -2. * dot(r.direction, toSphere);
     float c = dot(toSphere, toSphere) - s.radius * s.radius;
-    float discr = b * b - 4. * a * c;
-    return discr > 0.;
+    float discriminant = b * b - 4. * a * c;
+
+    if (discriminant < 0.) {
+        return -1.;
+    }
+
+    return (-b - sqrt(discriminant)) / (2. * a);
 }
 
 vec3 rayColor(Ray r) {
     Sphere s = Sphere(vec3(0, 0, -1), 0.5);
-    if (hitSphere(s, r)) {
-        return vec3(1, 0, 0);
+    float t = hitSphere(s, r);
+
+    if (t > 0.) {
+        vec3 N = normalize(at(r, t) - s.position);
+        return 0.5 * (N + 1.);
     }
 
     vec3 unitDir = normalize(r.direction);
@@ -37,11 +49,12 @@ void main() {
     float focalLength = 1.0;
     float aspect = uResolution.x / uResolution.y;
     vec2 uv = (gl_FragCoord.xy / uResolution) * 2.0 - 1.0; // to ndc
+    uv.y *= -1.0;
     uv.x *= aspect;
 
     vec3 cameraPos = vec3(0);
 
-    vec3 rayDir = vec3(uv, focalLength) - cameraPos;
+    vec3 rayDir = normalize(cameraPos - vec3(uv, focalLength));
 
     Ray r = Ray(cameraPos, rayDir);
 
