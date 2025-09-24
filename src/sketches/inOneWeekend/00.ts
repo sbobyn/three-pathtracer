@@ -22,10 +22,22 @@ export default function (): THREE.WebGLRenderer {
   });
 
   // Raytracing Canvas
-  const invViewProj = new THREE.Matrix4();
+
+  const cameraForward = new THREE.Vector3();
+  camera.getWorldDirection(cameraForward).normalize();
+  const cameraUp = camera.up.clone();
+  const cameraRight = new THREE.Vector3();
+  cameraRight.crossVectors(cameraForward, cameraUp).normalize();
+
+  const worldUp = new THREE.Vector3(0, 1, 0);
+
   const uniforms = {
     uCameraPosition: { value: camera.position },
-    uInvViewProjMatrix: { value: invViewProj },
+    uCameraUp: { value: cameraUp },
+    uCameraForward: {
+      value: cameraForward,
+    },
+    uCameraRight: { value: cameraRight },
   };
   const shaderDemo = new ShaderCanvas({
     canvas: canvas,
@@ -34,20 +46,15 @@ export default function (): THREE.WebGLRenderer {
   });
 
   renderer.setAnimationLoop(() => {
-    // update controls
     controls?.update();
-    // need to update camera matrices since Three.js only does it during renderer.render()
     camera.updateMatrixWorld();
     camera.updateProjectionMatrix();
 
-    // update camera-related uniforms
     uniforms.uCameraPosition.value.copy(camera.position);
 
-    invViewProj
-      .multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
-      .invert();
-
-    uniforms.uInvViewProjMatrix.value.copy(invViewProj);
+    camera.getWorldDirection(cameraForward).normalize();
+    cameraRight.crossVectors(cameraForward, worldUp).normalize();
+    cameraUp.crossVectors(cameraRight, cameraForward).normalize();
 
     shaderDemo.render();
   });

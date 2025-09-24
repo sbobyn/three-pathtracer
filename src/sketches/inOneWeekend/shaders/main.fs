@@ -113,19 +113,24 @@ vec3 rayColor(Ray r, World w) {
     return (1.0 - a) * vec3(1) + a * vec3(0.5, 0.7, 1);
 }
 
-uniform mat4 uInvViewProjMatrix;
 uniform vec3 uCameraPosition;
+uniform vec3 uCameraForward;
+uniform vec3 uCameraUp;
+uniform vec3 uCameraRight;
 
 void main() {
     vec2 uv = vUv;
 
-    vec4 rayClip = vec4(uv, -1.0, 1.0); // view plane at z = -1
-    vec4 rayWorld = uInvViewProjMatrix * rayClip;
-    rayWorld /= rayWorld.w;
+    float aspect = uResolution.x / uResolution.y;
 
-    vec3 rayDir = normalize(rayWorld.xyz - uCameraPosition);
+    float height = 1.;
+    float width = aspect * height;
 
-    Ray ray = Ray(uCameraPosition, rayDir);
+    vec3 rayDir = uCameraForward
+            + uv.x * width * uCameraRight
+            + uv.y * height * uCameraUp;
+
+    Ray ray = Ray(uCameraPosition, normalize(rayDir));
 
     Sphere sphere1 = Sphere(vec3(0, 0, 0), 0.5);
     Sphere sphere2 = Sphere(vec3(0.0, -100.5, 0), 100.);
