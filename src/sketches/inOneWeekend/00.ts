@@ -143,7 +143,6 @@ export default function (): THREE.WebGLRenderer {
     camera
   );
   composer.addPass(outlinePass);
-  outlinePass.selectedObjects = [sphere2];
 
   // Debug GUI
   const folder = createSketchFolder("Scene");
@@ -163,16 +162,31 @@ export default function (): THREE.WebGLRenderer {
       uniforms.uCamera.value.halfHeight * camera.aspect;
   });
 
-  const sphereFolder = folder.addFolder("Sphere  1");
-  sphereFolder.add(sphere1.position, "x", -5, 5, 0.1);
-  sphereFolder.add(sphere1.position, "y", -5, 5, 0.1);
-  sphereFolder.add(sphere1.position, "z", -5, 5, 0.1);
-  sphereFolder
-    .add(sphere1.geometry.parameters, "radius", 0.1, 5, 0.1)
-    .onChange(() => {
-      spheres[0].radius = sphere1.geometry.parameters.radius;
-    });
-  sphereFolder.open();
+  // picking objects
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+  let selectedObject: THREE.Object3D;
+
+  function checkIntersection() {
+    raycaster.setFromCamera(mouse, camera);
+
+    const intersects = raycaster.intersectObject(scene, true);
+
+    if (intersects.length > 0) {
+      selectedObject = intersects[0].object;
+      outlinePass.selectedObjects = [selectedObject];
+    } else {
+      outlinePass.selectedObjects = [];
+    }
+  }
+
+  // on mouse down check for intersection
+  window.addEventListener("mousedown", (e) => {
+    if (folder.domElement.contains(e.target as Node)) return;
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    checkIntersection();
+  });
 
   // render loop
   renderer.setAnimationLoop(() => {
