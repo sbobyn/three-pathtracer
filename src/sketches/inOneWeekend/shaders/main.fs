@@ -117,9 +117,7 @@ uniform mat4 uInvViewProjMatrix;
 uniform vec3 uCameraPosition;
 
 void main() {
-    float aspect = uResolution.x / uResolution.y;
     vec2 uv = vUv;
-    uv.x *= aspect;
 
     vec4 rayClip = vec4(uv, -1.0, 1.0); // view plane at z = -1
     vec4 rayWorld = uInvViewProjMatrix * rayClip;
