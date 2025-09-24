@@ -205,22 +205,23 @@ export default function (): THREE.WebGLRenderer {
   // render loop
 
   renderer.autoClear = false;
-  renderer.autoClearColor = false;
-  renderer.autoClearDepth = false;
-
+  const clock = new THREE.Clock();
   renderer.setAnimationLoop(() => {
     renderer.clear();
 
     controls?.update();
-    camera.updateMatrixWorld();
-    camera.updateProjectionMatrix();
 
-    camera.getWorldDirection(cameraForward).normalize();
-    cameraRight.crossVectors(cameraForward, worldUp).normalize();
-    cameraUp.crossVectors(cameraRight, cameraForward).normalize();
+    if (settings.raytracingEnabled) {
+      camera.updateMatrixWorld();
+      camera.updateProjectionMatrix();
+
+      camera.getWorldDirection(cameraForward).normalize();
+      cameraRight.crossVectors(cameraForward, worldUp).normalize();
+      cameraUp.crossVectors(cameraRight, cameraForward).normalize();
+    }
 
     // transform controls
-    transformControls.update();
+    transformControls.update(clock.getDelta());
 
     composer.render();
 
