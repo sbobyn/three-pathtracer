@@ -4,6 +4,8 @@ import { setupScene } from "../../core/setupScene";
 import fragShader from "./shaders/main.fs";
 import { createFullScreenPerspectiveCamera } from "../../core/createFullscreenCamera";
 import { createSketchFolder } from "../../core/guiManager";
+import { EffectComposer } from "three/examples/jsm/Addons.js";
+import { RenderPass } from "three/examples/jsm/Addons.js";
 
 const objectSpaceNormalMaterial = new THREE.ShaderMaterial({
   vertexShader: /* glsl */ `
@@ -83,32 +85,6 @@ export default function (): THREE.WebGLRenderer {
   ];
   const numSpheres = 2;
 
-  const folder = createSketchFolder("Scene");
-  // menu to selct between raytracer and renderer
-  const settings = {
-    raytracingEnabled: true,
-  };
-  folder.add(settings, "raytracingEnabled");
-  folder.add(camera, "fov", 10, 120, 1).onChange(() => {
-    camera.updateProjectionMatrix();
-    uniforms.uCamera.value.halfHeight = Math.tan(
-      THREE.MathUtils.degToRad(camera.fov) / 2
-    );
-    uniforms.uCamera.value.halfWidth =
-      uniforms.uCamera.value.halfHeight * camera.aspect;
-  });
-
-  const sphereFolder = folder.addFolder("Sphere  1");
-  sphereFolder.add(sphere1.position, "x", -5, 5, 0.1);
-  sphereFolder.add(sphere1.position, "y", -5, 5, 0.1);
-  sphereFolder.add(sphere1.position, "z", -5, 5, 0.1);
-  sphereFolder
-    .add(sphere1.geometry.parameters, "radius", 0.1, 5, 0.1)
-    .onChange(() => {
-      spheres[0].radius = sphere1.geometry.parameters.radius;
-    });
-  sphereFolder.open();
-
   for (let i = spheres.length; i < maxNumSpheres; i++) {
     spheres.push({
       position: new THREE.Vector3(),
@@ -147,6 +123,49 @@ export default function (): THREE.WebGLRenderer {
   const rtCamera = shaderDemo.getCamera();
   const rtScene = shaderDemo.getScene();
 
+  // Post-processing
+  const settings = {
+    raytracingEnabled: true,
+  };
+
+  const composer = new EffectComposer(renderer);
+  const renderPass = new RenderPass(scene, camera);
+  renderPass.enabled = !settings.raytracingEnabled;
+  composer.addPass(renderPass);
+  const rtPass = new RenderPass(rtScene, rtCamera);
+  composer.addPass(rtPass);
+  rtPass.enabled = settings.raytracingEnabled;
+
+  // Debug GUI
+  const folder = createSketchFolder("Scene");
+  // menu to selct between raytracer and renderer
+
+  folder.add(settings, "raytracingEnabled").onChange((value: boolean) => {
+    rtPass.enabled = value;
+    renderPass.enabled = !value;
+  });
+
+  folder.add(camera, "fov", 10, 120, 1).onChange(() => {
+    camera.updateProjectionMatrix();
+    uniforms.uCamera.value.halfHeight = Math.tan(
+      THREE.MathUtils.degToRad(camera.fov) / 2
+    );
+    uniforms.uCamera.value.halfWidth =
+      uniforms.uCamera.value.halfHeight * camera.aspect;
+  });
+
+  const sphereFolder = folder.addFolder("Sphere  1");
+  sphereFolder.add(sphere1.position, "x", -5, 5, 0.1);
+  sphereFolder.add(sphere1.position, "y", -5, 5, 0.1);
+  sphereFolder.add(sphere1.position, "z", -5, 5, 0.1);
+  sphereFolder
+    .add(sphere1.geometry.parameters, "radius", 0.1, 5, 0.1)
+    .onChange(() => {
+      spheres[0].radius = sphere1.geometry.parameters.radius;
+    });
+  sphereFolder.open();
+
+  // render loop
   renderer.setAnimationLoop(() => {
     controls?.update();
     camera.updateMatrixWorld();
@@ -156,11 +175,7 @@ export default function (): THREE.WebGLRenderer {
     cameraRight.crossVectors(cameraForward, worldUp).normalize();
     cameraUp.crossVectors(cameraRight, cameraForward).normalize();
 
-    if (settings.raytracingEnabled) {
-      renderer.render(rtScene, rtCamera);
-    } else {
-      renderer.render(scene, camera);
-    }
+    composer.render();
   });
 
   return shaderDemo.getRenderer();
