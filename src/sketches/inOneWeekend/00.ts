@@ -6,6 +6,7 @@ import { createFullScreenPerspectiveCamera } from "../../core/createFullscreenCa
 import { createSketchFolder } from "../../core/guiManager";
 import { EffectComposer } from "three/examples/jsm/Addons.js";
 import { RenderPass } from "three/examples/jsm/Addons.js";
+import { OutlinePass } from "three/examples/jsm/Addons.js";
 
 const objectSpaceNormalMaterial = new THREE.ShaderMaterial({
   vertexShader: /* glsl */ `
@@ -28,6 +29,7 @@ export default function (): THREE.WebGLRenderer {
   const camera = createFullScreenPerspectiveCamera({
     position: new THREE.Vector3(0, 0.5, 2),
     lookAt: new THREE.Vector3(0, 0.5, 0),
+    far: 10000,
   });
 
   const canvas = document.createElement("canvas");
@@ -67,7 +69,7 @@ export default function (): THREE.WebGLRenderer {
   const sphere1 = new THREE.Mesh(sphere1Geometry, objectSpaceNormalMaterial);
   sphere1.position.set(0, 0, 0);
 
-  const sphere2Geometry = new THREE.SphereGeometry(100.0);
+  const sphere2Geometry = new THREE.SphereGeometry(100.0, 32, 32);
   const sphere2 = new THREE.Mesh(sphere2Geometry, objectSpaceNormalMaterial);
   sphere2.position.set(0, -100.5, 0);
 
@@ -135,6 +137,13 @@ export default function (): THREE.WebGLRenderer {
   const rtPass = new RenderPass(rtScene, rtCamera);
   composer.addPass(rtPass);
   rtPass.enabled = settings.raytracingEnabled;
+  const outlinePass = new OutlinePass(
+    new THREE.Vector2(window.innerWidth * 2, window.innerHeight * 2),
+    scene,
+    camera
+  );
+  composer.addPass(outlinePass);
+  outlinePass.selectedObjects = [sphere2];
 
   // Debug GUI
   const folder = createSketchFolder("Scene");
