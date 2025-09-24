@@ -7,6 +7,7 @@ import { createSketchFolder } from "../../core/guiManager";
 import { EffectComposer } from "three/examples/jsm/Addons.js";
 import { RenderPass } from "three/examples/jsm/Addons.js";
 import { OutlinePass } from "three/examples/jsm/Addons.js";
+import { TransformControls } from "three/examples/jsm/Addons.js";
 
 const objectSpaceNormalMaterial = new THREE.ShaderMaterial({
   vertexShader: /* glsl */ `
@@ -68,12 +69,17 @@ export default function (): THREE.WebGLRenderer {
   const sphere1Geometry = new THREE.SphereGeometry(0.5);
   const sphere1 = new THREE.Mesh(sphere1Geometry, objectSpaceNormalMaterial);
   sphere1.position.set(0, 0, 0);
+  const transformControls = new TransformControls(camera, renderer.domElement);
+  transformControls.attach(sphere1);
+  transformControls.addEventListener("dragging-changed", function (event) {
+    controls.enabled = !event.value;
+  });
 
   const sphere2Geometry = new THREE.SphereGeometry(100.0, 32, 32);
   const sphere2 = new THREE.Mesh(sphere2Geometry, objectSpaceNormalMaterial);
   sphere2.position.set(0, -100.5, 0);
 
-  scene.add(sphere1, sphere2);
+  // scene.add(sphere1, sphere2);
 
   const spheres = [
     {
@@ -144,6 +150,10 @@ export default function (): THREE.WebGLRenderer {
   );
   composer.addPass(outlinePass);
 
+  const gizmo = transformControls.getHelper();
+  const gizmoScene = new THREE.Scene();
+  gizmoScene.add(gizmo);
+
   // Debug GUI
   const folder = createSketchFolder("Scene");
   // menu to selct between raytracer and renderer
@@ -167,10 +177,14 @@ export default function (): THREE.WebGLRenderer {
   const mouse = new THREE.Vector2();
   let selectedObject: THREE.Object3D;
 
+  const group = new THREE.Group();
+  scene.add(group);
+  group.add(sphere1, sphere2);
+
   function checkIntersection() {
     raycaster.setFromCamera(mouse, camera);
 
-    const intersects = raycaster.intersectObject(scene, true);
+    const intersects = raycaster.intersectObject(group, true);
 
     if (intersects.length > 0) {
       selectedObject = intersects[0].object;
@@ -189,7 +203,14 @@ export default function (): THREE.WebGLRenderer {
   });
 
   // render loop
+
+  renderer.autoClear = false;
+  renderer.autoClearColor = false;
+  renderer.autoClearDepth = false;
+
   renderer.setAnimationLoop(() => {
+    renderer.clear();
+
     controls?.update();
     camera.updateMatrixWorld();
     camera.updateProjectionMatrix();
@@ -198,7 +219,12 @@ export default function (): THREE.WebGLRenderer {
     cameraRight.crossVectors(cameraForward, worldUp).normalize();
     cameraUp.crossVectors(cameraRight, cameraForward).normalize();
 
+    // transform controls
+    transformControls.update();
+
     composer.render();
+
+    renderer.render(gizmoScene, camera);
   });
 
   return shaderDemo.getRenderer();
