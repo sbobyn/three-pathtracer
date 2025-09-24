@@ -3,6 +3,7 @@ import { ShaderCanvas } from "../../core/ShaderCanvas";
 import { setupScene } from "../../core/setupScene";
 import fragShader from "./shaders/main.fs";
 import { createFullScreenPerspectiveCamera } from "../../core/createFullscreenCamera";
+import { createSketchFolder } from "../../core/guiManager";
 
 export default function (): THREE.WebGLRenderer {
   // Three.js Scene
@@ -31,6 +32,38 @@ export default function (): THREE.WebGLRenderer {
 
   const worldUp = new THREE.Vector3(0, 1, 0);
 
+  // Sphere sphere1 = Sphere(vec3(0, 0, 0), 0.5);
+  // Sphere sphere2 = Sphere(vec3(0.0, -100.5, 0), 100.);
+
+  const maxNumSpheres = 100;
+
+  const sphere1 = {
+    position: new THREE.Vector3(0, 0, 0),
+    radius: 0.5,
+  };
+  const sphere2 = {
+    position: new THREE.Vector3(0, -100.5, 0),
+    radius: 100.0,
+  };
+
+  const spheres = [sphere1, sphere2];
+  const numSpheres = 2;
+
+  const folder = createSketchFolder("Spheres");
+  const sphereFolder = folder.addFolder("Sphere  1");
+  sphereFolder.add(sphere1.position, "x", -5, 5, 0.1);
+  sphereFolder.add(sphere1.position, "y", -5, 5, 0.1);
+  sphereFolder.add(sphere1.position, "z", -5, 5, 0.1);
+  sphereFolder.add(sphere1, "radius", 0.1, 5, 0.1);
+  sphereFolder.open();
+
+  for (let i = spheres.length; i < maxNumSpheres; i++) {
+    spheres.push({
+      position: new THREE.Vector3(),
+      radius: 0,
+    });
+  }
+
   const uniforms = {
     uCamera: {
       value: {
@@ -38,6 +71,12 @@ export default function (): THREE.WebGLRenderer {
         up: cameraUp,
         forward: cameraForward,
         right: cameraRight,
+      },
+    },
+    uWorld: {
+      value: {
+        spheres: spheres,
+        numSpheres: numSpheres,
       },
     },
   };

@@ -47,11 +47,13 @@ bool intervalSurrounds(Interval i, float x) {
     return i.min < x && x < i.max;
 }
 
-#define MAX_SPHERES 100
+#define MAX_SPHERES 2
 struct World {
     Sphere spheres[MAX_SPHERES];
     int numSpheres;
 };
+
+uniform World uWorld;
 
 void setFaceNormal(Ray ray, vec3 outwardNormal, out Hit hit) {
     hit.frontFace = dot(ray.direction, outwardNormal) < 0.0;
@@ -136,14 +138,6 @@ void main() {
 
     Ray ray = Ray(uCamera.position, normalize(rayDir));
 
-    Sphere sphere1 = Sphere(vec3(0, 0, 0), 0.5);
-    Sphere sphere2 = Sphere(vec3(0.0, -100.5, 0), 100.);
-
-    World world;
-    world.spheres[0] = sphere1;
-    world.spheres[1] = sphere2;
-    world.numSpheres = 2;
-
-    vec3 color = rayColor(ray, world);
+    vec3 color = rayColor(ray, uWorld);
     gl_FragColor = vec4(color, 1.0);
 }
