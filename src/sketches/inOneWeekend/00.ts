@@ -5,6 +5,22 @@ import fragShader from "./shaders/main.fs";
 import { createFullScreenPerspectiveCamera } from "../../core/createFullscreenCamera";
 import { createSketchFolder } from "../../core/guiManager";
 
+const objectSpaceNormalMaterial = new THREE.ShaderMaterial({
+  vertexShader: /* glsl */ `
+      varying vec3 vNormal;
+      void main() {
+        vNormal = normal;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+  fragmentShader: /* glsl */ `
+      varying vec3 vNormal;
+      void main() {
+        gl_FragColor = vec4(vNormal * 0.5 + 0.5, 1.0);
+      }
+    `,
+});
+
 export default function (): THREE.WebGLRenderer {
   // Three.js Scene
   const camera = createFullScreenPerspectiveCamera({
@@ -22,6 +38,8 @@ export default function (): THREE.WebGLRenderer {
     enableOrbitControls: true,
   });
 
+  scene.background = new THREE.Color(0xbcd7ff); // Sky blue background
+
   // Raytracing Canvas
 
   const cameraForward = new THREE.Vector3();
@@ -34,24 +52,61 @@ export default function (): THREE.WebGLRenderer {
 
   const maxNumSpheres = 100;
 
-  const sphere1 = {
-    position: new THREE.Vector3(0, 0, 0),
-    radius: 0.5,
-  };
-  const sphere2 = {
-    position: new THREE.Vector3(0, -100.5, 0),
-    radius: 100.0,
-  };
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  scene.add(new THREE.DirectionalLight(0xffffff, 0.5));
 
-  const spheres = [sphere1, sphere2];
+  const standardMaterial = new THREE.MeshStandardMaterial({
+    color: 0xff0000,
+    metalness: 0.0,
+    roughness: 0.5,
+  });
+
+  const sphere1Geometry = new THREE.SphereGeometry(0.5);
+  const sphere1 = new THREE.Mesh(sphere1Geometry, objectSpaceNormalMaterial);
+  sphere1.position.set(0, 0, 0);
+
+  const sphere2Geometry = new THREE.SphereGeometry(100.0);
+  const sphere2 = new THREE.Mesh(sphere2Geometry, objectSpaceNormalMaterial);
+  sphere2.position.set(0, -100.5, 0);
+
+  scene.add(sphere1, sphere2);
+
+  const spheres = [
+    {
+      position: sphere1.position,
+      radius: sphere1.geometry.parameters.radius,
+    },
+    {
+      position: sphere2.position,
+      radius: sphere2.geometry.parameters.radius,
+    },
+  ];
   const numSpheres = 2;
 
-  const folder = createSketchFolder("Spheres");
+  const folder = createSketchFolder("Scene");
+  // menu to selct between raytracer and renderer
+  const settings = {
+    raytracingEnabled: true,
+  };
+  folder.add(settings, "raytracingEnabled");
+  folder.add(camera, "fov", 10, 120, 1).onChange(() => {
+    camera.updateProjectionMatrix();
+    uniforms.uCamera.value.halfHeight = Math.tan(
+      THREE.MathUtils.degToRad(camera.fov) / 2
+    );
+    uniforms.uCamera.value.halfWidth =
+      uniforms.uCamera.value.halfHeight * camera.aspect;
+  });
+
   const sphereFolder = folder.addFolder("Sphere  1");
   sphereFolder.add(sphere1.position, "x", -5, 5, 0.1);
   sphereFolder.add(sphere1.position, "y", -5, 5, 0.1);
   sphereFolder.add(sphere1.position, "z", -5, 5, 0.1);
-  sphereFolder.add(sphere1, "radius", 0.1, 5, 0.1);
+  sphereFolder
+    .add(sphere1.geometry.parameters, "radius", 0.1, 5, 0.1)
+    .onChange(() => {
+      spheres[0].radius = sphere1.geometry.parameters.radius;
+    });
   sphereFolder.open();
 
   for (let i = spheres.length; i < maxNumSpheres; i++) {
@@ -61,6 +116,10 @@ export default function (): THREE.WebGLRenderer {
     });
   }
 
+  const verticalFov = THREE.MathUtils.degToRad(camera.fov);
+  const halfHeight = Math.tan(verticalFov / 2);
+  const halfWidth = halfHeight * camera.aspect;
+
   const uniforms = {
     uCamera: {
       value: {
@@ -68,6 +127,8 @@ export default function (): THREE.WebGLRenderer {
         up: cameraUp,
         forward: cameraForward,
         right: cameraRight,
+        halfWidth: halfWidth,
+        halfHeight: halfHeight,
       },
     },
     uWorld: {
@@ -83,6 +144,9 @@ export default function (): THREE.WebGLRenderer {
     uniforms: uniforms,
   });
 
+  const rtCamera = shaderDemo.getCamera();
+  const rtScene = shaderDemo.getScene();
+
   renderer.setAnimationLoop(() => {
     controls?.update();
     camera.updateMatrixWorld();
@@ -92,7 +156,11 @@ export default function (): THREE.WebGLRenderer {
     cameraRight.crossVectors(cameraForward, worldUp).normalize();
     cameraUp.crossVectors(cameraRight, cameraForward).normalize();
 
-    shaderDemo.render();
+    if (settings.raytracingEnabled) {
+      renderer.render(rtScene, rtCamera);
+    } else {
+      renderer.render(scene, camera);
+    }
   });
 
   return shaderDemo.getRenderer();

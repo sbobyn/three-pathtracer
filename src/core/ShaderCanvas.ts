@@ -105,4 +105,12 @@ export class ShaderCanvas {
   public getRenderer(): THREE.WebGLRenderer {
     return this.renderer;
   }
+
+  public getScene(): THREE.Scene {
+    return this.scene;
+  }
+
+  public getCamera(): THREE.OrthographicCamera {
+    return this.canvasCamera;
+  }
 }

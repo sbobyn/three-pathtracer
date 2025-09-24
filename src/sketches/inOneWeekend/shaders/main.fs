@@ -9,6 +9,8 @@ struct Camera {
     vec3 forward;
     vec3 up;
     vec3 right;
+    float halfWidth;
+    float halfHeight;
 };
 
 uniform Camera uCamera;
@@ -127,14 +129,9 @@ vec3 rayColor(Ray r, World w) {
 void main() {
     vec2 uv = vUv;
 
-    float aspect = uResolution.x / uResolution.y;
-
-    float height = 1.;
-    float width = aspect * height;
-
     vec3 rayDir = uCamera.forward
-            + uv.x * width * uCamera.right
-            + uv.y * height * uCamera.up;
+            + uv.x * uCamera.halfWidth * uCamera.right
+            + uv.y * uCamera.halfHeight * uCamera.up;
 
     Ray ray = Ray(uCamera.position, normalize(rayDir));
 
