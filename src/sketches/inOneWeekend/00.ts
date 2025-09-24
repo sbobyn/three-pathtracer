@@ -32,12 +32,14 @@ export default function (): THREE.WebGLRenderer {
   const worldUp = new THREE.Vector3(0, 1, 0);
 
   const uniforms = {
-    uCameraPosition: { value: camera.position },
-    uCameraUp: { value: cameraUp },
-    uCameraForward: {
-      value: cameraForward,
+    uCamera: {
+      value: {
+        position: camera.position,
+        up: cameraUp,
+        forward: cameraForward,
+        right: cameraRight,
+      },
     },
-    uCameraRight: { value: cameraRight },
   };
   const shaderDemo = new ShaderCanvas({
     canvas: canvas,
@@ -49,8 +51,6 @@ export default function (): THREE.WebGLRenderer {
     controls?.update();
     camera.updateMatrixWorld();
     camera.updateProjectionMatrix();
-
-    uniforms.uCameraPosition.value.copy(camera.position);
 
     camera.getWorldDirection(cameraForward).normalize();
     cameraRight.crossVectors(cameraForward, worldUp).normalize();

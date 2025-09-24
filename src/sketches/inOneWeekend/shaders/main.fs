@@ -4,6 +4,15 @@ varying vec2 vUv;
 
 uniform vec2 uResolution;
 
+struct Camera {
+    vec3 position;
+    vec3 forward;
+    vec3 up;
+    vec3 right;
+};
+
+uniform Camera uCamera;
+
 struct Ray {
     vec3 origin;
     vec3 direction;
@@ -113,11 +122,6 @@ vec3 rayColor(Ray r, World w) {
     return (1.0 - a) * vec3(1) + a * vec3(0.5, 0.7, 1);
 }
 
-uniform vec3 uCameraPosition;
-uniform vec3 uCameraForward;
-uniform vec3 uCameraUp;
-uniform vec3 uCameraRight;
-
 void main() {
     vec2 uv = vUv;
 
@@ -126,11 +130,11 @@ void main() {
     float height = 1.;
     float width = aspect * height;
 
-    vec3 rayDir = uCameraForward
-            + uv.x * width * uCameraRight
-            + uv.y * height * uCameraUp;
+    vec3 rayDir = uCamera.forward
+            + uv.x * width * uCamera.right
+            + uv.y * height * uCamera.up;
 
-    Ray ray = Ray(uCameraPosition, normalize(rayDir));
+    Ray ray = Ray(uCamera.position, normalize(rayDir));
 
     Sphere sphere1 = Sphere(vec3(0, 0, 0), 0.5);
     Sphere sphere2 = Sphere(vec3(0.0, -100.5, 0), 100.);
