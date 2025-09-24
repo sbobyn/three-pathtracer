@@ -32,9 +32,6 @@ export default function (): THREE.WebGLRenderer {
 
   const worldUp = new THREE.Vector3(0, 1, 0);
 
-  // Sphere sphere1 = Sphere(vec3(0, 0, 0), 0.5);
-  // Sphere sphere2 = Sphere(vec3(0.0, -100.5, 0), 100.);
-
   const maxNumSpheres = 100;
 
   const sphere1 = {
