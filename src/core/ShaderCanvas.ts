@@ -5,7 +5,7 @@ import { setupStats } from "./setupStats";
 
 export class ShaderCanvas {
   private scene: THREE.Scene;
-  private camera: THREE.OrthographicCamera;
+  private canvasCamera: THREE.OrthographicCamera;
   private renderer: THREE.WebGLRenderer;
   private drawingBufferSize: THREE.Vector2;
   private material: THREE.ShaderMaterial;
@@ -13,28 +13,28 @@ export class ShaderCanvas {
   private stats?: Stats;
 
   constructor({
+    canvas,
     fragmentShader,
     vertexShader = `
+      varying vec2 vUv;
       void main() {
+        vUv = uv * 2.0 - 1.0;
         gl_Position = vec4(position, 1.0);
       }
     `,
     uniforms = {},
     enableStats = false,
   }: {
+    canvas: HTMLCanvasElement;
     fragmentShader: string;
     vertexShader?: string;
     uniforms?: Record<string, THREE.IUniform<any>>;
     enableStats?: boolean;
   }) {
-    const canvas = document.createElement("canvas");
-    canvas.classList.add("shader-canvas");
-    document.querySelector("#app")?.appendChild(canvas);
-
     this.scene = new THREE.Scene();
 
     // Fullscreen camera (-1 to 1 space)
-    this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    this.canvasCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
     // Fullscreen quad geometry
     const geometry = new THREE.PlaneGeometry(2, 2);
@@ -97,15 +97,9 @@ export class ShaderCanvas {
     }
   }
 
-  start() {
-    this.renderer.setAnimationLoop(() => {
-      this.stats?.begin();
-
-      this.material.uniforms.uTime.value = this.clock.getElapsedTime();
-      this.renderer.render(this.scene, this.camera);
-
-      this.stats?.end();
-    });
+  public render() {
+    this.material.uniforms.uTime.value = this.clock.getElapsedTime();
+    this.renderer.render(this.scene, this.canvasCamera);
   }
 
   public getRenderer(): THREE.WebGLRenderer {

@@ -2,23 +2,20 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 export function setupScene({
+  canvas,
   camera,
   enableOrbitControls = true,
   clearColor = 0x202020,
 }: {
+  canvas: HTMLCanvasElement;
   camera: THREE.Camera;
   enableOrbitControls?: boolean;
   clearColor?: number;
 }): {
   scene: THREE.Scene;
   renderer: THREE.WebGLRenderer;
-  camera: THREE.Camera;
   controls?: OrbitControls;
 } {
-  const canvas = document.createElement("canvas");
-  canvas.classList.add("webgl");
-  document.querySelector("#app")?.appendChild(canvas);
-
   const scene = new THREE.Scene();
 
   let controls: OrbitControls | undefined = undefined;
@@ -39,5 +36,5 @@ export function setupScene({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   });
 
-  return { scene, renderer, camera, controls };
+  return { scene, renderer, controls };
 }

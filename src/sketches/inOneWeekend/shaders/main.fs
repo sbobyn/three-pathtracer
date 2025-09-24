@@ -1,5 +1,7 @@
 precision highp float;
 
+varying vec2 vUv;
+
 uniform vec2 uResolution;
 
 struct Ray {
@@ -111,21 +113,24 @@ vec3 rayColor(Ray r, World w) {
     return (1.0 - a) * vec3(1) + a * vec3(0.5, 0.7, 1);
 }
 
+uniform mat4 uInvViewProjMatrix;
+uniform vec3 uCameraPosition;
+
 void main() {
-    float focalLength = 1.0;
     float aspect = uResolution.x / uResolution.y;
-    vec2 uv = (gl_FragCoord.xy / uResolution) * 2.0 - 1.0; // to ndc
-    uv.y *= -1.0;
+    vec2 uv = vUv;
     uv.x *= aspect;
 
-    vec3 cameraPos = vec3(0);
+    vec4 rayClip = vec4(uv, -1.0, 1.0); // view plane at z = -1
+    vec4 rayWorld = uInvViewProjMatrix * rayClip;
+    rayWorld /= rayWorld.w;
 
-    vec3 rayDir = normalize(cameraPos - vec3(uv, focalLength));
+    vec3 rayDir = normalize(rayWorld.xyz - uCameraPosition);
 
-    Ray ray = Ray(cameraPos, rayDir);
+    Ray ray = Ray(uCameraPosition, rayDir);
 
-    Sphere sphere1 = Sphere(vec3(0, 0, -1), 0.5);
-    Sphere sphere2 = Sphere(vec3(0.0, -100.5, -1.0), 100.);
+    Sphere sphere1 = Sphere(vec3(0, 0, 0), 0.5);
+    Sphere sphere2 = Sphere(vec3(0.0, -100.5, 0), 100.);
 
     World world;
     world.spheres[0] = sphere1;
