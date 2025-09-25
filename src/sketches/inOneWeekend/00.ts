@@ -45,7 +45,7 @@ export default function (): THREE.WebGLRenderer {
 
   renderer.shadowMap.enabled = true;
 
-  const skyColor = new THREE.Color(0xbcd7ff); // Sky blue background
+  const skyColor = new THREE.Color(0xd1dfed); // Sky blue background
   scene.background = skyColor;
 
   // Raytracing Canvas
@@ -59,7 +59,7 @@ export default function (): THREE.WebGLRenderer {
   const worldUp = new THREE.Vector3(0, 1, 0);
 
   scene.add(new THREE.AmbientLight(skyColor, 0.5));
-  const dirLight = new THREE.DirectionalLight(skyColor, 2);
+  const dirLight = new THREE.DirectionalLight(skyColor, 4);
   dirLight.castShadow = true;
   scene.add(dirLight);
 
@@ -71,9 +71,13 @@ export default function (): THREE.WebGLRenderer {
   });
   const materialLeft = new THREE.MeshStandardMaterial({
     color: new THREE.Color(0.8, 0.8, 0.8),
+    roughness: 0.0,
+    metalness: 0.2,
   });
   const materialRight = new THREE.MeshStandardMaterial({
     color: new THREE.Color(0.8, 0.6, 0.2),
+    roughness: 0.0,
+    metalness: 0.5,
   });
   const sphereGeometry = new THREE.SphereGeometry();
   const sphereGround = new THREE.Mesh(sphereGeometry, materialGround);
