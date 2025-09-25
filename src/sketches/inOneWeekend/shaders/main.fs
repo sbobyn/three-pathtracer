@@ -112,7 +112,7 @@ bool hitWorld(World world, Ray ray, Interval rayInt, out Hit hit) {
 
 vec3 rayColor(Ray r, World w) {
     Hit hit;
-    Interval rayInt = Interval(0.0001, 10000.);
+    Interval rayInt = Interval(1e-3, 1e4);
     bool didHit = hitWorld(w, r, rayInt, hit);
 
     if (didHit) {
