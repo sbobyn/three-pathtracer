@@ -214,6 +214,8 @@ void main() {
         Ray ray = Ray(uCamera.position, normalize(rayDir));
         color += rayColor(ray, uWorld, seed2);
     }
+    color /= uNumSamples;
 
-    gl_FragColor = vec4(color / uNumSamples, 1.0);
+    color = sqrt(color); // gamma correction
+    gl_FragColor = vec4(color, 1.0);
 }

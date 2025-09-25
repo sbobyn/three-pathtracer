@@ -180,6 +180,7 @@ export default function (): THREE.WebGLRenderer {
   const renderPass = new RenderPass(scene, camera);
   renderPass.enabled = !settings.raytracingEnabled;
   composer.addPass(renderPass);
+  renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
   const rtPass = new RenderPass(
     shaderDemo.screenScene,
     shaderDemo.screenCamera
