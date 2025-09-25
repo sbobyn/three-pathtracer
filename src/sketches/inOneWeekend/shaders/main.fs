@@ -110,20 +110,22 @@ bool hitWorld(World world, Ray ray, Interval rayInt, out Hit hit) {
     return hitAnything;
 }
 
-vec3 rayColor(Ray r, World w) {
-    Hit hit;
-    Interval rayInt = Interval(1e-3, 1e4);
-    bool didHit = hitWorld(w, r, rayInt, hit);
+// vec3 rayColorNormal(Ray r, World w) {
+//     Hit hit;
+//     Interval rayInt = Interval(1e-3, 1e4);
+//     bool didHit = hitWorld(w, r, rayInt, hit);
 
-    if (didHit) {
-        return 0.5 * (hit.normal + 1.);
-    }
+//     if (didHit) {
+//         return 0.5 * (hit.normal + 1.);
+//     }
 
-    vec3 unitDir = normalize(r.direction);
-    float a = 0.5 * (unitDir.y + 1.0);
+//     vec3 unitDir = normalize(r.direction);
+//     float a = 0.5 * (unitDir.y + 1.0);
 
-    return (1.0 - a) * vec3(1) + a * vec3(0.5, 0.7, 1);
-}
+//     return (1.0 - a) * vec3(1) + a * vec3(0.5, 0.7, 1);
+// }
+
+#define PI 3.141592653
 
 // source: Hash without Sine: https://www.shadertoy.com/view/4djSRW
 vec2 hash22(vec2 p) {
@@ -132,12 +134,73 @@ vec2 hash22(vec2 p) {
     return fract((p3.xx + p3.yz) * p3.zy);
 }
 
+vec3 hash32(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * vec3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yxz + 33.33);
+    return fract((p3.xxy + p3.yzz) * p3.zyx);
+}
+
+// analytical random in unit sphere https://www.shadertoy.com/view/7tBXDh
+vec3 random_in_unit_sphere(vec2 p) {
+    vec3 rand = hash32(p);
+    float phi = 2.0 * PI * rand.x;
+    float cosTheta = 2.0 * rand.y - 1.0;
+    float u = rand.z;
+
+    float theta = acos(cosTheta);
+    float r = pow(u, 1.0 / 3.0);
+
+    float x = r * sin(theta) * cos(phi);
+    float y = r * sin(theta) * sin(phi);
+    float z = r * cos(theta);
+
+    return vec3(x, y, z);
+}
+
+vec3 random_unit_vector(vec2 p) {
+    return normalize(random_in_unit_sphere(p));
+}
+
+#define MAX_DEPTH 10
+
+vec3 rayColor(Ray r, World w, vec2 seed) {
+    Hit hit;
+
+    vec3 color = vec3(1);
+
+    int depth;
+    for (depth = 0; depth < MAX_DEPTH; depth++) {
+        Interval rayInt = Interval(1e-3, 1e4);
+        bool didHit = hitWorld(w, r, rayInt, hit);
+
+        if (didHit) {
+            r.origin = hit.position;
+            vec3 scatter_direction = normalize(hit.normal + random_unit_vector(seed * 256. + float(depth)));
+            r.direction = scatter_direction;
+            color *= 0.5;
+        } else {
+            break;
+        }
+    }
+
+    if (depth == MAX_DEPTH) {
+        return vec3(0);
+    }
+
+    vec3 unitDir = normalize(r.direction);
+    float a = 0.5 * (unitDir.y + 1.0);
+
+    vec3 backgroundColor = (1.0 - a) * vec3(1) + a * vec3(0.5, 0.7, 1);
+    return backgroundColor * color;
+}
+
 uniform float uNumSamples;
 
 void main() {
     vec3 color = vec3(0);
     for (int s = 0; s < int(uNumSamples); s++) {
-        vec2 rand = hash22(vUv + vec2(float(s)));
+        vec2 seed2 = vUv + vec2(float(s));
+        vec2 rand = hash22(seed2);
         vec2 offset = (rand - 0.5) / uResolution;
         vec2 uv = vUv + offset;
 
@@ -146,7 +209,7 @@ void main() {
                 + uv.y * uCamera.halfHeight * uCamera.up;
 
         Ray ray = Ray(uCamera.position, normalize(rayDir));
-        color += rayColor(ray, uWorld);
+        color += rayColor(ray, uWorld, seed2);
     }
 
     gl_FragColor = vec4(color / uNumSamples, 1.0);

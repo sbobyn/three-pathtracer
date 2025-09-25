@@ -144,7 +144,7 @@ export default function (): THREE.WebGLRenderer {
     height: window.innerHeight,
     fragmentShader: fragShader,
     uniforms: uniforms,
-    resolutionScale: 0.125,
+    resolutionScale: 1.0,
   });
 
   // handle resize
