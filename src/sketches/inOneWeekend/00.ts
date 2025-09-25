@@ -147,6 +147,7 @@ export default function (): THREE.WebGLRenderer {
       },
     },
     uNumSamples: { value: 10 },
+    uMaxRayDepth: { value: 10 },
   };
   // setup
   const shaderDemo = new ShaderCanvas({
@@ -222,6 +223,10 @@ export default function (): THREE.WebGLRenderer {
   raytracingSettingsFolder
     .add(uniforms.uNumSamples, "value", 1, 20, 1)
     .name("Samples");
+
+  raytracingSettingsFolder
+    .add(uniforms.uMaxRayDepth, "value", 1, 20, 1)
+    .name("Max Ray Depth");
 
   raytracingSettingsFolder
     .add(shaderDemo, "resolutionScale", [2.0, 1.0, 0.5, 0.25, 0.125, 0.0625])

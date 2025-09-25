@@ -164,7 +164,7 @@ vec3 random_unit_vector(vec2 p) {
     return normalize(random_in_unit_sphere(p));
 }
 
-#define MAX_DEPTH 10
+uniform int uMaxRayDepth;
 
 vec3 rayColor(Ray r, World w, vec2 seed) {
     Hit hit;
@@ -172,7 +172,7 @@ vec3 rayColor(Ray r, World w, vec2 seed) {
     vec3 color = vec3(1);
 
     int depth;
-    for (depth = 0; depth < MAX_DEPTH; depth++) {
+    for (depth = 0; depth < uMaxRayDepth; depth++) {
         Interval rayInt = Interval(1e-3, 1e4);
         bool didHit = hitWorld(w, r, rayInt, hit);
 
@@ -182,19 +182,20 @@ vec3 rayColor(Ray r, World w, vec2 seed) {
             r.direction = scatter_direction;
             color *= w.spheres[hit.id].color;
         } else {
+            vec3 unitDir = normalize(r.direction);
+            float a = 0.5 * (unitDir.y + 1.0);
+
+            vec3 backgroundColor = (1.0 - a) * vec3(1) + a * vec3(0.5, 0.7, 1);
+            color *= backgroundColor;
             break;
         }
     }
 
-    if (depth == MAX_DEPTH) {
+    if (depth == uMaxRayDepth) { // never hit light
         return vec3(0);
     }
 
-    vec3 unitDir = normalize(r.direction);
-    float a = 0.5 * (unitDir.y + 1.0);
-
-    vec3 backgroundColor = (1.0 - a) * vec3(1) + a * vec3(0.5, 0.7, 1);
-    return backgroundColor * color;
+    return color;
 }
 
 uniform float uNumSamples;
