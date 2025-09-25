@@ -190,16 +190,26 @@ export default function (): THREE.WebGLRenderer {
   const folder = createSketchFolder("Scene");
   // menu to selct between raytracer and renderer
 
-  folder.add(settings, "raytracingEnabled").onChange((value: boolean) => {
-    rtPass.enabled = value;
-    renderPass.enabled = !value;
-  });
+  const raytracingToggleGUI = folder.add(settings, "raytracingEnabled");
 
-  folder
+  const rayTracingResolutionGUI = folder
     .add(shaderDemo, "resolutionScale", [2.0, 1.0, 0.5, 0.25, 0.125, 0.0625])
     .onChange((value: number) => {
       shaderDemo.updateRenderTarget();
     });
+  if (!settings.raytracingEnabled) {
+    rayTracingResolutionGUI.disable();
+  }
+
+  raytracingToggleGUI.onChange((value: boolean) => {
+    rtPass.enabled = value;
+    renderPass.enabled = !value;
+    if (value) {
+      rayTracingResolutionGUI.enable();
+    } else {
+      rayTracingResolutionGUI.disable();
+    }
+  });
 
   folder.add(camera, "fov", 10, 120, 1).onChange(() => {
     camera.updateProjectionMatrix();
