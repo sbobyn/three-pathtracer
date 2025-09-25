@@ -176,12 +176,12 @@ vec3 rayColor(Ray r, World w, vec2 seed) {
         Interval rayInt = Interval(1e-3, 1e4);
         bool didHit = hitWorld(w, r, rayInt, hit);
 
-        if (didHit) {
+        if (didHit) { // hit a sphere
             r.origin = hit.position;
             vec3 scatter_direction = normalize(hit.normal + random_unit_vector(seed * 256. + float(depth)));
             r.direction = scatter_direction;
             color *= w.spheres[hit.id].color;
-        } else {
+        } else { // hit sky
             vec3 unitDir = normalize(r.direction);
             float a = 0.5 * (unitDir.y + 1.0);
 
@@ -191,7 +191,7 @@ vec3 rayColor(Ray r, World w, vec2 seed) {
         }
     }
 
-    if (depth == uMaxRayDepth) { // never hit light
+    if (depth == uMaxRayDepth) { // never hit sky
         return vec3(0);
     }
 
