@@ -109,6 +109,10 @@ export class ShaderCanvas {
   // }
 
   public updateRenderTarget() {
+    this.material.uniforms.uResolution.value.set(
+      this.width * this.resolutionScale,
+      this.height * this.resolutionScale
+    );
     this.renderTarget.setSize(
       this.width * this.resolutionScale,
       this.height * this.resolutionScale
