@@ -56,7 +56,7 @@ bool intervalSurrounds(Interval i, float x) {
     return i.min < x && x < i.max;
 }
 
-#define MAX_SPHERES 2
+#define MAX_SPHERES 4
 struct World {
     Sphere spheres[MAX_SPHERES];
     int numSpheres;

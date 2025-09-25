@@ -58,20 +58,85 @@ export default function (): THREE.WebGLRenderer {
 
   const worldUp = new THREE.Vector3(0, 1, 0);
 
-  const maxNumSpheres = 100;
-
   scene.add(new THREE.AmbientLight(skyColor, 0.5));
   const dirLight = new THREE.DirectionalLight(skyColor, 2);
   dirLight.castShadow = true;
   scene.add(dirLight);
 
-  const sphere1Geometry = new THREE.SphereGeometry(0.5);
-  const sphere1Material = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(0.5, 0.5, 0.5),
+  const materialGround = new THREE.MeshLambertMaterial({
+    color: new THREE.Color(0.8, 0.8, 0),
   });
-  const sphere1 = new THREE.Mesh(sphere1Geometry, sphere1Material);
-  sphere1.castShadow = true;
-  sphere1.position.set(0, 0, 0);
+  const materialCenter = new THREE.MeshLambertMaterial({
+    color: new THREE.Color(0.1, 0.2, 0.5),
+  });
+  const materialLeft = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(0.8, 0.8, 0.8),
+  });
+  const materialRight = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(0.8, 0.6, 0.2),
+  });
+  const sphereGeometry = new THREE.SphereGeometry();
+  const sphereGround = new THREE.Mesh(sphereGeometry, materialGround);
+  sphereGround.position.set(0, -100.5, 0);
+  sphereGround.scale.set(100, 100, 100);
+  sphereGround.receiveShadow = true;
+  scene.add(sphereGround);
+  const sphereCenter = new THREE.Mesh(sphereGeometry, materialCenter);
+  sphereCenter.position.set(0, 0, 0);
+  sphereCenter.scale.set(0.5, 0.5, 0.5);
+  sphereCenter.castShadow = true;
+  scene.add(sphereCenter);
+  const sphereLeft = new THREE.Mesh(sphereGeometry, materialLeft);
+  sphereLeft.position.set(-1.2, 0, 0);
+  sphereLeft.scale.set(0.5, 0.5, 0.5);
+  sphereLeft.castShadow = true;
+  scene.add(sphereLeft);
+  const sphereRight = new THREE.Mesh(sphereGeometry, materialRight);
+  sphereRight.position.set(1.2, 0, 0);
+  sphereRight.scale.set(0.5, 0.5, 0.5);
+  sphereRight.castShadow = true;
+
+  const spheres = [
+    {
+      position: sphereGround.position,
+      radius: 100,
+      materialId: 0,
+    },
+    {
+      position: sphereCenter.position,
+      radius: 0.5,
+      materialId: 1,
+    },
+    {
+      position: sphereLeft.position,
+      radius: 0.5,
+      materialId: 2,
+    },
+    {
+      position: sphereRight.position,
+      radius: 0.5,
+      materialId: 3,
+    },
+  ];
+
+  const materials = [
+    {
+      type: 0,
+      albedo: materialGround.color,
+    },
+    {
+      type: 0,
+      albedo: materialCenter.color,
+    },
+    {
+      type: 1,
+      albedo: materialLeft.color,
+    },
+    {
+      type: 1,
+      albedo: materialRight.color,
+    },
+  ];
 
   const transformControls = new TransformControls(camera, renderer.domElement);
   transformControls.addEventListener("dragging-changed", function (event) {
@@ -95,56 +160,9 @@ export default function (): THREE.WebGLRenderer {
     }
   });
 
-  const sphere2Geometry = new THREE.SphereGeometry(100.0, 32, 32);
-  const sphere2Material = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(0.5, 0.5, 0.5),
-  });
-  const sphere2 = new THREE.Mesh(sphere2Geometry, sphere2Material);
-  sphere2.receiveShadow = true;
-  sphere2.position.set(0, -100.5, 0);
-
-  const spheres = [
-    {
-      position: sphere1.position,
-      radius: sphere1.geometry.parameters.radius,
-      materialId: 0,
-    },
-    {
-      position: sphere2.position,
-      radius: sphere2.geometry.parameters.radius,
-      materialId: 1,
-    },
-  ];
-  const numSpheres = 2;
-
-  for (let i = spheres.length; i < maxNumSpheres; i++) {
-    spheres.push({
-      position: new THREE.Vector3(),
-      radius: 0,
-      materialId: 0,
-    });
-  }
-
   const verticalFov = THREE.MathUtils.degToRad(camera.fov);
   const halfHeight = Math.tan(verticalFov / 2);
   const halfWidth = halfHeight * camera.aspect;
-
-  const materials = [
-    {
-      type: 1, // metal
-      albedo: sphere1Material.color,
-    },
-    {
-      type: 0, // lambertian
-      albedo: sphere2Material.color,
-    },
-  ];
-  for (let i = materials.length; i < maxNumSpheres; i++) {
-    materials.push({
-      type: 0,
-      albedo: new THREE.Color(Math.random(), Math.random(), Math.random()),
-    });
-  }
 
   const uniforms = {
     uCamera: {
@@ -160,7 +178,7 @@ export default function (): THREE.WebGLRenderer {
     uWorld: {
       value: {
         spheres: spheres,
-        numSpheres: numSpheres,
+        numSpheres: spheres.length,
       },
     },
     uNumSamples: { value: 10 },
@@ -322,10 +340,12 @@ export default function (): THREE.WebGLRenderer {
 
   const group = new THREE.Group();
   scene.add(group);
-  group.add(sphere1, sphere2);
+  const sphereMeshes = [sphereGround, sphereCenter, sphereLeft, sphereRight];
+  for (let i = 0; i < spheres.length; i++) {
+    group.add(sphereMeshes[i]);
+    sphereMeshes[i].index = i;
+  }
   group.updateMatrixWorld();
-  sphere1.index = 0;
-  sphere2.index = 1;
 
   function checkIntersection() {
     raycaster.setFromCamera(mouse, camera);
