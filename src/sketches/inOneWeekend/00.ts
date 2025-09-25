@@ -136,6 +136,7 @@ export default function (): THREE.WebGLRenderer {
         numSpheres: numSpheres,
       },
     },
+    uNumSamples: { value: 10 },
   };
   // setup
   const shaderDemo = new ShaderCanvas({
@@ -190,27 +191,6 @@ export default function (): THREE.WebGLRenderer {
   const folder = createSketchFolder("Scene");
   // menu to selct between raytracer and renderer
 
-  const raytracingToggleGUI = folder.add(settings, "raytracingEnabled");
-
-  const rayTracingResolutionGUI = folder
-    .add(shaderDemo, "resolutionScale", [2.0, 1.0, 0.5, 0.25, 0.125, 0.0625])
-    .onChange((value: number) => {
-      shaderDemo.updateRenderTarget();
-    });
-  if (!settings.raytracingEnabled) {
-    rayTracingResolutionGUI.disable();
-  }
-
-  raytracingToggleGUI.onChange((value: boolean) => {
-    rtPass.enabled = value;
-    renderPass.enabled = !value;
-    if (value) {
-      rayTracingResolutionGUI.enable();
-    } else {
-      rayTracingResolutionGUI.disable();
-    }
-  });
-
   folder.add(camera, "fov", 10, 120, 1).onChange(() => {
     camera.updateProjectionMatrix();
     uniforms.uCamera.value.halfHeight = Math.tan(
@@ -218,6 +198,33 @@ export default function (): THREE.WebGLRenderer {
     );
     uniforms.uCamera.value.halfWidth =
       uniforms.uCamera.value.halfHeight * camera.aspect;
+  });
+
+  const raytracingToggleGUI = folder.add(settings, "raytracingEnabled");
+
+  const raytracingSettingsFolder = folder.addFolder("Raytracing Settings");
+  if (!settings.raytracingEnabled) {
+    raytracingSettingsFolder.hide();
+  }
+
+  raytracingSettingsFolder
+    .add(uniforms.uNumSamples, "value", 1, 20, 1)
+    .name("Samples");
+
+  raytracingSettingsFolder
+    .add(shaderDemo, "resolutionScale", [2.0, 1.0, 0.5, 0.25, 0.125, 0.0625])
+    .onChange((value: number) => {
+      shaderDemo.updateRenderTarget();
+    });
+
+  raytracingToggleGUI.onChange((value: boolean) => {
+    rtPass.enabled = value;
+    renderPass.enabled = !value;
+    if (value) {
+      raytracingSettingsFolder.show();
+    } else {
+      raytracingSettingsFolder.hide();
+    }
   });
 
   const selctedObjectFolder = folder.addFolder("Selected Object");

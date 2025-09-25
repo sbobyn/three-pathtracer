@@ -125,15 +125,29 @@ vec3 rayColor(Ray r, World w) {
     return (1.0 - a) * vec3(1) + a * vec3(0.5, 0.7, 1);
 }
 
+// source: Hash without Sine: https://www.shadertoy.com/view/4djSRW
+vec2 hash22(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * vec3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.xx + p3.yz) * p3.zy);
+}
+
+uniform float uNumSamples;
+
 void main() {
-    vec2 uv = vUv;
+    vec3 color = vec3(0);
+    for (int s = 0; s < int(uNumSamples); s++) {
+        vec2 rand = hash22(vUv + vec2(float(s)));
+        vec2 offset = (rand - 0.5) / uResolution;
+        vec2 uv = vUv + offset;
 
-    vec3 rayDir = uCamera.forward
-            + uv.x * uCamera.halfWidth * uCamera.right
-            + uv.y * uCamera.halfHeight * uCamera.up;
+        vec3 rayDir = uCamera.forward
+                + uv.x * uCamera.halfWidth * uCamera.right
+                + uv.y * uCamera.halfHeight * uCamera.up;
 
-    Ray ray = Ray(uCamera.position, normalize(rayDir));
+        Ray ray = Ray(uCamera.position, normalize(rayDir));
+        color += rayColor(ray, uWorld);
+    }
 
-    vec3 color = rayColor(ray, uWorld);
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(color / uNumSamples, 1.0);
 }
