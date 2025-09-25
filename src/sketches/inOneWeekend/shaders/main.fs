@@ -85,7 +85,7 @@ bool hitSphere(Sphere s, Ray r, Interval rayInt, out Hit hit) {
     }
 
     hit.t = root;
-    hit.position = rayAt(r, root);
+    hit.position = rayAt(r, hit.t);
 
     vec3 outwardN = (hit.position - s.position) / s.radius;
     setFaceNormal(r, outwardN, hit);
@@ -99,9 +99,8 @@ bool hitWorld(World world, Ray ray, Interval rayInt, out Hit hit) {
 
     for (int i = 0; i < world.numSpheres; i++) {
         Sphere sphere = world.spheres[i];
-        rayInt.max = closestSoFar;
 
-        if (hitSphere(sphere, ray, rayInt, tempHit)) {
+        if (hitSphere(sphere, ray, Interval(rayInt.min, closestSoFar), tempHit)) {
             hitAnything = true;
             closestSoFar = tempHit.t;
             hit = tempHit;

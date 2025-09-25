@@ -82,6 +82,13 @@ export default function (): THREE.WebGLRenderer {
       selectedObject.scale.set(scale, scale, scale);
       spheres[selectedObject.index].radius =
         scale * selectedObject.geometry.parameters.radius;
+      settings.selectedRadius = spheres[selectedObject.index].radius;
+      selectedRadiusGUI.updateDisplay();
+    } else {
+      settings.selectedPosition.copy(selectedObject.position);
+      selectedPositionXGUI.updateDisplay();
+      selectedPositionYGUI.updateDisplay();
+      selectedPositionZGUI.updateDisplay();
     }
   });
 
@@ -142,6 +149,8 @@ export default function (): THREE.WebGLRenderer {
   // Post-processing
   const settings = {
     raytracingEnabled: true,
+    selectedPosition: new THREE.Vector3(),
+    selectedRadius: 0,
   };
 
   const composer = new EffectComposer(renderer);
@@ -180,7 +189,9 @@ export default function (): THREE.WebGLRenderer {
       uniforms.uCamera.value.halfHeight * camera.aspect;
   });
 
-  const transformFolder = folder
+  const selctedObjectFolder = folder.addFolder("Selected Object");
+
+  const transformFolder = selctedObjectFolder
     .add(transformControls, "mode", ["translate", "scale"])
     .name("transform mode")
     .onChange((value: string) => {
@@ -192,7 +203,34 @@ export default function (): THREE.WebGLRenderer {
         transformControls.showZ = true;
       }
     });
-  transformFolder.disable();
+
+  const selectedPositionXGUI = selctedObjectFolder
+    .add(settings.selectedPosition, "x", -1)
+    .onChange((value: number) => {
+      if (selectedObject) selectedObject.position.x = value;
+    });
+  const selectedPositionYGUI = selctedObjectFolder
+    .add(settings.selectedPosition, "y", -1)
+    .onChange((value: number) => {
+      if (selectedObject) selectedObject.position.y = value;
+    });
+  const selectedPositionZGUI = selctedObjectFolder
+    .add(settings.selectedPosition, "z", -1)
+    .onChange((value: number) => {
+      if (selectedObject) selectedObject.position.z = value;
+    });
+  const selectedRadiusGUI = selctedObjectFolder
+    .add(settings, "selectedRadius", 0)
+    .onChange((value: number) => {
+      if (selectedObject) {
+        spheres[selectedObject.index].radius = value;
+        const scale = value / selectedObject.geometry.parameters.radius;
+        selectedObject.scale.set(scale, scale, scale);
+      }
+    })
+    .name("radius");
+
+  selctedObjectFolder.hide();
 
   // picking objects
   const raycaster = new THREE.Raycaster();
@@ -202,6 +240,7 @@ export default function (): THREE.WebGLRenderer {
   const group = new THREE.Group();
   scene.add(group);
   group.add(sphere1, sphere2);
+  group.updateMatrixWorld();
   sphere1.index = 0;
   sphere2.index = 1;
 
@@ -214,11 +253,14 @@ export default function (): THREE.WebGLRenderer {
       selectedObject = intersects[0].object;
       outlinePass.selectedObjects = [selectedObject];
       transformControls.attach(selectedObject);
-      transformFolder.enable();
+      selctedObjectFolder.show();
+      // radius display must be manually updated
+      settings.selectedRadius = spheres[selectedObject.index].radius;
+      selectedRadiusGUI.updateDisplay();
     } else {
       outlinePass.selectedObjects = [];
       transformControls.detach();
-      transformFolder.disable();
+      selctedObjectFolder.hide();
     }
   }
 
