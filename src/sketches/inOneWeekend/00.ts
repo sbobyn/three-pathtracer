@@ -137,15 +137,25 @@ export default function (): THREE.WebGLRenderer {
       },
     },
   };
+  // setup
   const shaderDemo = new ShaderCanvas({
-    sceneCamera: camera,
-    canvas: canvas,
+    width: window.innerWidth,
+    height: window.innerHeight,
     fragmentShader: fragShader,
     uniforms: uniforms,
+    resolutionScale: 0.125,
   });
 
-  const rtCamera = shaderDemo.getCamera();
-  const rtScene = shaderDemo.getScene();
+  // handle resize
+  window.addEventListener("resize", () => {
+    const verticalFov = THREE.MathUtils.degToRad(camera.fov);
+    const halfHeight = Math.tan(verticalFov / 2);
+    const halfWidth = halfHeight * camera.aspect;
+    uniforms.uCamera.value.halfHeight = halfHeight;
+    uniforms.uCamera.value.halfWidth = halfWidth;
+
+    shaderDemo.setDimensions(window.innerWidth, window.innerHeight);
+  });
 
   // Post-processing
   const settings = {
@@ -158,9 +168,13 @@ export default function (): THREE.WebGLRenderer {
   const renderPass = new RenderPass(scene, camera);
   renderPass.enabled = !settings.raytracingEnabled;
   composer.addPass(renderPass);
-  const rtPass = new RenderPass(rtScene, rtCamera);
+  const rtPass = new RenderPass(
+    shaderDemo.screenScene,
+    shaderDemo.screenCamera
+  );
   composer.addPass(rtPass);
   rtPass.enabled = settings.raytracingEnabled;
+
   const outlinePass = new OutlinePass(
     new THREE.Vector2(window.innerWidth * 2, window.innerHeight * 2),
     scene,
@@ -180,6 +194,12 @@ export default function (): THREE.WebGLRenderer {
     rtPass.enabled = value;
     renderPass.enabled = !value;
   });
+
+  folder
+    .add(shaderDemo, "resolutionScale", [2.0, 1.0, 0.5, 0.25, 0.125, 0.0625])
+    .onChange((value: number) => {
+      shaderDemo.updateRenderTarget();
+    });
 
   folder.add(camera, "fov", 10, 120, 1).onChange(() => {
     camera.updateProjectionMatrix();
@@ -289,15 +309,15 @@ export default function (): THREE.WebGLRenderer {
       camera.getWorldDirection(cameraForward).normalize();
       cameraRight.crossVectors(cameraForward, worldUp).normalize();
       cameraUp.crossVectors(cameraRight, cameraForward).normalize();
+      shaderDemo.render(renderer);
     }
 
     // transform controls
     transformControls.update(clock.getDelta());
 
     composer.render();
-
     renderer.render(gizmoScene, camera);
   });
 
-  return shaderDemo.getRenderer();
+  return renderer;
 }

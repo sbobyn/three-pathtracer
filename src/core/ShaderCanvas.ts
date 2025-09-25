@@ -3,15 +3,21 @@ import * as THREE from "three";
 export class ShaderCanvas {
   private scene: THREE.Scene;
   private canvasCamera: THREE.OrthographicCamera;
-  private sceneCamera: THREE.PerspectiveCamera;
-  private renderer: THREE.WebGLRenderer;
-  private drawingBufferSize: THREE.Vector2;
   private material: THREE.ShaderMaterial;
   private clock = new THREE.Clock();
+  private width: number;
+  private height: number;
+  private screenMaterial: THREE.MeshBasicMaterial;
+
+  public screenScene: THREE.Scene;
+  public screenCamera: THREE.OrthographicCamera;
+
+  public resolutionScale: number;
+  public renderTarget: THREE.WebGLRenderTarget;
 
   constructor({
-    canvas,
-    sceneCamera,
+    width,
+    height,
     fragmentShader,
     vertexShader = `
       varying vec2 vUv;
@@ -21,32 +27,32 @@ export class ShaderCanvas {
       }
     `,
     uniforms = {},
+    resolutionScale = 1.0,
   }: {
-    canvas: HTMLCanvasElement;
-    sceneCamera: THREE.PerspectiveCamera;
+    width: number;
+    height: number;
     fragmentShader: string;
     vertexShader?: string;
     uniforms?: Record<string, THREE.IUniform<any>>;
+    resolutionScale?: number;
   }) {
-    this.sceneCamera = sceneCamera;
-
+    this.width = width;
+    this.height = height;
+    this.resolutionScale = resolutionScale;
     this.scene = new THREE.Scene();
-
-    // Fullscreen camera (-1 to 1 space)
     this.canvasCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-    // Fullscreen quad geometry
     const geometry = new THREE.PlaneGeometry(2, 2);
-    // Merge user uniforms with built-in time + resolution
     this.material = new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader,
       uniforms: {
         uTime: { value: 0 },
         uResolution: {
-          value: new THREE.Vector2(window.innerWidth, window.innerHeight),
+          value: new THREE.Vector2(width, height).multiplyScalar(
+            resolutionScale
+          ),
         },
-        uMouse: { value: new THREE.Vector4(0, 0, 0, 0) }, // x,y = current, z,w = click-down
         ...uniforms,
       },
     });
@@ -54,63 +60,58 @@ export class ShaderCanvas {
     const mesh = new THREE.Mesh(geometry, this.material);
     this.scene.add(mesh);
 
-    // Renderer
-    this.renderer = new THREE.WebGLRenderer({ canvas });
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.drawingBufferSize = new THREE.Vector2();
-    this.renderer.getDrawingBufferSize(this.drawingBufferSize);
-    this.material.uniforms.uResolution.value.copy(this.drawingBufferSize);
+    this.renderTarget = new THREE.WebGLRenderTarget(
+      width * resolutionScale,
+      height * resolutionScale,
+      {
+        minFilter: THREE.NearestFilter,
+        magFilter: THREE.NearestFilter,
+        format: THREE.RGBAFormat,
+        depthBuffer: false,
+      }
+    );
 
-    // Handle resize
+    // Create a fullscreen quad in your main scene to show the raytracer output
+    this.screenMaterial = new THREE.MeshBasicMaterial({
+      map: this.renderTarget.texture,
+    });
+    const screenQuad = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 2),
+      this.screenMaterial
+    );
+    this.screenScene = new THREE.Scene();
+    this.screenCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    this.screenScene.add(screenQuad);
+
+    // handle resize event
     window.addEventListener("resize", () => {
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.renderer.getDrawingBufferSize(this.drawingBufferSize);
-      this.material.uniforms.uResolution.value.copy(this.drawingBufferSize);
-      const verticalFov = THREE.MathUtils.degToRad(this.sceneCamera.fov);
-      const halfHeight = Math.tan(verticalFov / 2);
-      const halfWidth = halfHeight * this.sceneCamera.aspect;
-      this.material.uniforms.uCamera.value.halfHeight = halfHeight;
-      this.material.uniforms.uCamera.value.halfWidth = halfWidth;
-    });
-
-    // Handle mouse
-    window.addEventListener("mousemove", (event) => {
-      const x = event.clientX;
-      const y = window.innerHeight - event.clientY; // bottom-left origin
-      this.material.uniforms.uMouse.value.set(
-        x,
-        y,
-        this.material.uniforms.uMouse.value.z,
-        this.material.uniforms.uMouse.value.w
-      );
-    });
-
-    window.addEventListener("mousedown", (event) => {
-      const x = event.clientX;
-      const y = window.innerHeight - event.clientY;
-      this.material.uniforms.uMouse.value.set(x, y, x, y); // click-down pos stored in zw
-    });
-
-    window.addEventListener("mouseup", () => {
-      // currently not used, not tracking mouse click release
+      this.setDimensions(window.innerWidth, window.innerHeight);
+      this.updateRenderTarget();
     });
   }
 
-  public render() {
+  public render(renderer: THREE.WebGLRenderer) {
     this.material.uniforms.uTime.value = this.clock.getElapsedTime();
-    this.renderer.render(this.scene, this.canvasCamera);
+    renderer.setRenderTarget(this.renderTarget);
+    renderer.render(this.scene, this.canvasCamera);
+    renderer.setRenderTarget(null);
+    this.screenMaterial.map = this.renderTarget.texture;
   }
 
-  public getRenderer(): THREE.WebGLRenderer {
-    return this.renderer;
+  public setDimensions(width: number, height: number) {
+    this.renderTarget.setSize(width, height);
+    this.material.uniforms.uResolution.value.set(width, height);
   }
 
-  public getScene(): THREE.Scene {
-    return this.scene;
-  }
+  // public setResolutionScale(scale: number) {
+  //   this.resolutionScale = scale;
+  //   this.renderTarget.setSize(this.width * scale, this.height * scale);
+  // }
 
-  public getCamera(): THREE.OrthographicCamera {
-    return this.canvasCamera;
+  public updateRenderTarget() {
+    this.renderTarget.setSize(
+      this.width * this.resolutionScale,
+      this.height * this.resolutionScale
+    );
   }
 }
