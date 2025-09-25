@@ -131,7 +131,7 @@ export default function (): THREE.WebGLRenderer {
 
   const materials = [
     {
-      type: 0, // lambertian
+      type: 1, // metal
       albedo: sphere1Material.color,
     },
     {

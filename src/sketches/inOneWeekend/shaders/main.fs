@@ -176,7 +176,7 @@ bool nearZero(vec3 p) {
     return p.x < s && p.y < s && p.z < s;
 }
 
-vec3 scatter(Hit hit, vec2 seed) {
+vec3 scatterLambert(Hit hit, vec2 seed) {
     vec3 scatterDir = hit.normal + random_unit_vector(seed);
     if (nearZero(scatterDir)) { // catch degenerate scatter direction
         scatterDir = hit.normal;
@@ -184,9 +184,27 @@ vec3 scatter(Hit hit, vec2 seed) {
     return normalize(scatterDir);
 }
 
+vec3 scatterMetal(Ray rayIn, Hit hit, vec2 seed) {
+    vec3 scatterDir = reflect(rayIn.direction, hit.normal);
+    return normalize(scatterDir);
+}
+
+vec3 scatter(Ray rayIn, Hit hit, vec2 seed) {
+    if (uMaterials[hit.materialId].type == 0) { // lambertian
+        return scatterLambert(hit, seed);
+    } else if (uMaterials[hit.materialId].type == 1) { // metal
+        return scatterMetal(rayIn, hit, seed);
+    }
+
+    return vec3(0);
+}
+
 uniform int uMaxRayDepth;
 
-vec3 rayColor(Ray r, World w, vec2 seed) {
+vec3 rayColor(Ray
+    r, World
+    w, vec2
+    seed) {
     Hit hit;
 
     vec3 color = vec3(1);
@@ -198,7 +216,7 @@ vec3 rayColor(Ray r, World w, vec2 seed) {
 
         if (didHit) { // hit a sphere
             r.origin = hit.position;
-            r.direction = scatter(hit, seed * 256. + float(depth));
+            r.direction = scatter(r, hit, seed * 256. + float(depth));
             color *= uMaterials[hit.materialId].albedo;
         } else { // hit sky
             vec3 unitDir = normalize(r.direction);
