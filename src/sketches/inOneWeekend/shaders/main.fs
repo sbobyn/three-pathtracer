@@ -28,10 +28,15 @@ float lengthSquared(vec3 a) {
     return dot(a, a);
 }
 
+struct Material {
+    int type; // 0: lambertian
+    vec3 albedo;
+};
+
 struct Sphere {
     vec3 position;
     float radius;
-    vec3 color;
+    int materialId;
 };
 
 struct Hit {
@@ -39,7 +44,7 @@ struct Hit {
     vec3 position;
     vec3 normal;
     bool frontFace;
-    int id;
+    int materialId;
 };
 
 struct Interval {
@@ -56,6 +61,8 @@ struct World {
     Sphere spheres[MAX_SPHERES];
     int numSpheres;
 };
+
+uniform Material uMaterials[MAX_SPHERES];
 
 uniform World uWorld;
 
@@ -106,7 +113,7 @@ bool hitWorld(World world, Ray ray, Interval rayInt, out Hit hit) {
             hitAnything = true;
             closestSoFar = tempHit.t;
             hit = tempHit;
-            hit.id = i;
+            hit.materialId = world.spheres[i].materialId;
         }
     }
 
@@ -164,6 +171,11 @@ vec3 random_unit_vector(vec2 p) {
     return normalize(random_in_unit_sphere(p));
 }
 
+vec3 scatter(Hit hit, vec2 seed) {
+    vec3 scatter_direction = hit.normal + random_unit_vector(seed);
+    return normalize(scatter_direction);
+}
+
 uniform int uMaxRayDepth;
 
 vec3 rayColor(Ray r, World w, vec2 seed) {
@@ -178,9 +190,8 @@ vec3 rayColor(Ray r, World w, vec2 seed) {
 
         if (didHit) { // hit a sphere
             r.origin = hit.position;
-            vec3 scatter_direction = normalize(hit.normal + random_unit_vector(seed * 256. + float(depth)));
-            r.direction = scatter_direction;
-            color *= w.spheres[hit.id].color;
+            r.direction = scatter(hit, seed * 256. + float(depth));
+            color *= uMaterials[hit.materialId].albedo;
         } else { // hit sky
             vec3 unitDir = normalize(r.direction);
             float a = 0.5 * (unitDir.y + 1.0);

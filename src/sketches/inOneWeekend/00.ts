@@ -107,12 +107,12 @@ export default function (): THREE.WebGLRenderer {
     {
       position: sphere1.position,
       radius: sphere1.geometry.parameters.radius,
-      color: sphere1Material.color,
+      materialId: 0,
     },
     {
       position: sphere2.position,
       radius: sphere2.geometry.parameters.radius,
-      color: sphere2Material.color,
+      materialId: 1,
     },
   ];
   const numSpheres = 2;
@@ -121,13 +121,30 @@ export default function (): THREE.WebGLRenderer {
     spheres.push({
       position: new THREE.Vector3(),
       radius: 0,
-      color: new THREE.Color(0x000000),
+      materialId: 0,
     });
   }
 
   const verticalFov = THREE.MathUtils.degToRad(camera.fov);
   const halfHeight = Math.tan(verticalFov / 2);
   const halfWidth = halfHeight * camera.aspect;
+
+  const materials = [
+    {
+      type: 0, // lambertian
+      albedo: sphere1Material.color,
+    },
+    {
+      type: 0, // lambertian
+      albedo: sphere2Material.color,
+    },
+  ];
+  for (let i = materials.length; i < maxNumSpheres; i++) {
+    materials.push({
+      type: 0,
+      albedo: new THREE.Color(Math.random(), Math.random(), Math.random()),
+    });
+  }
 
   const uniforms = {
     uCamera: {
@@ -148,6 +165,7 @@ export default function (): THREE.WebGLRenderer {
     },
     uNumSamples: { value: 10 },
     uMaxRayDepth: { value: 10 },
+    uMaterials: { value: materials },
   };
   // setup
   const shaderDemo = new ShaderCanvas({
@@ -289,7 +307,7 @@ export default function (): THREE.WebGLRenderer {
     .onChange((value: string) => {
       if (selectedObject) {
         const color = new THREE.Color(value);
-        spheres[selectedObject.index].color = color;
+        materials[spheres[selectedObject.index].materialId].albedo = color;
         selectedObject.material.color = color;
       }
     })
@@ -323,7 +341,9 @@ export default function (): THREE.WebGLRenderer {
       settings.selectedRadius = spheres[selectedObject.index].radius;
       selectedRadiusGUI.updateDisplay();
       settings.selectedColor =
-        spheres[selectedObject.index].color.getHexString();
+        materials[
+          spheres[selectedObject.index].materialId
+        ].albedo.getHexString();
       selectedObjectColorGUI.updateDisplay();
     } else {
       outlinePass.selectedObjects = [];
