@@ -69,17 +69,25 @@ export default function (): THREE.WebGLRenderer {
   const sphere1Geometry = new THREE.SphereGeometry(0.5);
   const sphere1 = new THREE.Mesh(sphere1Geometry, objectSpaceNormalMaterial);
   sphere1.position.set(0, 0, 0);
+
   const transformControls = new TransformControls(camera, renderer.domElement);
-  transformControls.attach(sphere1);
   transformControls.addEventListener("dragging-changed", function (event) {
     controls.enabled = !event.value;
+  });
+  transformControls.mode = "translate";
+
+  transformControls.addEventListener("change", () => {
+    if (transformControls.mode === "scale") {
+      const scale = selectedObject.scale.x;
+      selectedObject.scale.set(scale, scale, scale);
+      spheres[selectedObject.index].radius =
+        scale * selectedObject.geometry.parameters.radius;
+    }
   });
 
   const sphere2Geometry = new THREE.SphereGeometry(100.0, 32, 32);
   const sphere2 = new THREE.Mesh(sphere2Geometry, objectSpaceNormalMaterial);
   sphere2.position.set(0, -100.5, 0);
-
-  // scene.add(sphere1, sphere2);
 
   const spheres = [
     {
@@ -172,6 +180,20 @@ export default function (): THREE.WebGLRenderer {
       uniforms.uCamera.value.halfHeight * camera.aspect;
   });
 
+  const transformFolder = folder
+    .add(transformControls, "mode", ["translate", "scale"])
+    .name("transform mode")
+    .onChange((value: string) => {
+      if (value === "scale") {
+        transformControls.showY = false;
+        transformControls.showZ = false;
+      } else {
+        transformControls.showY = true;
+        transformControls.showZ = true;
+      }
+    });
+  transformFolder.disable();
+
   // picking objects
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
@@ -180,6 +202,8 @@ export default function (): THREE.WebGLRenderer {
   const group = new THREE.Group();
   scene.add(group);
   group.add(sphere1, sphere2);
+  sphere1.index = 0;
+  sphere2.index = 1;
 
   function checkIntersection() {
     raycaster.setFromCamera(mouse, camera);
@@ -189,8 +213,12 @@ export default function (): THREE.WebGLRenderer {
     if (intersects.length > 0) {
       selectedObject = intersects[0].object;
       outlinePass.selectedObjects = [selectedObject];
+      transformControls.attach(selectedObject);
+      transformFolder.enable();
     } else {
       outlinePass.selectedObjects = [];
+      transformControls.detach();
+      transformFolder.disable();
     }
   }
 
