@@ -57,7 +57,7 @@ struct World {
 
 uniform World uWorld;
 
-void setFaceNormal(Ray ray, vec3 outwardNormal, out Hit hit) {
+void setFaceNormal(Ray ray, vec3 outwardNormal, inout Hit hit) {
     hit.frontFace = dot(ray.direction, outwardNormal) < 0.0;
     hit.normal = hit.frontFace ? outwardNormal : -outwardNormal;
 }
