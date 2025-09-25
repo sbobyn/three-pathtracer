@@ -171,9 +171,17 @@ vec3 random_unit_vector(vec2 p) {
     return normalize(random_in_unit_sphere(p));
 }
 
+bool nearZero(vec3 p) {
+    float s = 1e-8;
+    return p.x < s && p.y < s && p.z < s;
+}
+
 vec3 scatter(Hit hit, vec2 seed) {
-    vec3 scatter_direction = hit.normal + random_unit_vector(seed);
-    return normalize(scatter_direction);
+    vec3 scatterDir = hit.normal + random_unit_vector(seed);
+    if (nearZero(scatterDir)) { // catch degenerate scatter direction
+        scatterDir = hit.normal;
+    }
+    return normalize(scatterDir);
 }
 
 uniform int uMaxRayDepth;
