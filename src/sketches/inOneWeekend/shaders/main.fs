@@ -31,6 +31,7 @@ float lengthSquared(vec3 a) {
 struct Sphere {
     vec3 position;
     float radius;
+    vec3 color;
 };
 
 struct Hit {
@@ -38,6 +39,7 @@ struct Hit {
     vec3 position;
     vec3 normal;
     bool frontFace;
+    int id;
 };
 
 struct Interval {
@@ -104,6 +106,7 @@ bool hitWorld(World world, Ray ray, Interval rayInt, out Hit hit) {
             hitAnything = true;
             closestSoFar = tempHit.t;
             hit = tempHit;
+            hit.id = i;
         }
     }
 
@@ -177,7 +180,7 @@ vec3 rayColor(Ray r, World w, vec2 seed) {
             r.origin = hit.position;
             vec3 scatter_direction = normalize(hit.normal + random_unit_vector(seed * 256. + float(depth)));
             r.direction = scatter_direction;
-            color *= 0.5;
+            color *= w.spheres[hit.id].color;
         } else {
             break;
         }

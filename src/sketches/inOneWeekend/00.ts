@@ -43,7 +43,10 @@ export default function (): THREE.WebGLRenderer {
     enableOrbitControls: true,
   });
 
-  scene.background = new THREE.Color(0xbcd7ff); // Sky blue background
+  renderer.shadowMap.enabled = true;
+
+  const skyColor = new THREE.Color(0xbcd7ff); // Sky blue background
+  scene.background = skyColor;
 
   // Raytracing Canvas
 
@@ -57,17 +60,17 @@ export default function (): THREE.WebGLRenderer {
 
   const maxNumSpheres = 100;
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-  scene.add(new THREE.DirectionalLight(0xffffff, 0.5));
-
-  const standardMaterial = new THREE.MeshStandardMaterial({
-    color: 0xff0000,
-    metalness: 0.0,
-    roughness: 0.5,
-  });
+  scene.add(new THREE.AmbientLight(skyColor, 0.5));
+  const dirLight = new THREE.DirectionalLight(skyColor, 2);
+  dirLight.castShadow = true;
+  scene.add(dirLight);
 
   const sphere1Geometry = new THREE.SphereGeometry(0.5);
-  const sphere1 = new THREE.Mesh(sphere1Geometry, objectSpaceNormalMaterial);
+  const sphere1Material = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(0.5, 0.5, 0.5),
+  });
+  const sphere1 = new THREE.Mesh(sphere1Geometry, sphere1Material);
+  sphere1.castShadow = true;
   sphere1.position.set(0, 0, 0);
 
   const transformControls = new TransformControls(camera, renderer.domElement);
@@ -93,17 +96,23 @@ export default function (): THREE.WebGLRenderer {
   });
 
   const sphere2Geometry = new THREE.SphereGeometry(100.0, 32, 32);
-  const sphere2 = new THREE.Mesh(sphere2Geometry, objectSpaceNormalMaterial);
+  const sphere2Material = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(0.5, 0.5, 0.5),
+  });
+  const sphere2 = new THREE.Mesh(sphere2Geometry, sphere2Material);
+  sphere2.receiveShadow = true;
   sphere2.position.set(0, -100.5, 0);
 
   const spheres = [
     {
       position: sphere1.position,
       radius: sphere1.geometry.parameters.radius,
+      color: sphere1Material.color,
     },
     {
       position: sphere2.position,
       radius: sphere2.geometry.parameters.radius,
+      color: sphere2Material.color,
     },
   ];
   const numSpheres = 2;
@@ -112,6 +121,7 @@ export default function (): THREE.WebGLRenderer {
     spheres.push({
       position: new THREE.Vector3(),
       radius: 0,
+      color: new THREE.Color(0x000000),
     });
   }
 
@@ -163,6 +173,7 @@ export default function (): THREE.WebGLRenderer {
     raytracingEnabled: true,
     selectedPosition: new THREE.Vector3(),
     selectedRadius: 0,
+    selectedColor: "#000000",
   };
 
   const composer = new EffectComposer(renderer);
@@ -267,6 +278,16 @@ export default function (): THREE.WebGLRenderer {
       }
     })
     .name("radius");
+  const selectedObjectColorGUI = selctedObjectFolder
+    .addColor(settings, "selectedColor")
+    .onChange((value: string) => {
+      if (selectedObject) {
+        const color = new THREE.Color(value);
+        spheres[selectedObject.index].color = color;
+        selectedObject.material.color = color;
+      }
+    })
+    .name("color");
 
   selctedObjectFolder.hide();
 
@@ -295,6 +316,9 @@ export default function (): THREE.WebGLRenderer {
       // radius display must be manually updated
       settings.selectedRadius = spheres[selectedObject.index].radius;
       selectedRadiusGUI.updateDisplay();
+      settings.selectedColor =
+        spheres[selectedObject.index].color.getHexString();
+      selectedObjectColorGUI.updateDisplay();
     } else {
       outlinePass.selectedObjects = [];
       transformControls.detach();
