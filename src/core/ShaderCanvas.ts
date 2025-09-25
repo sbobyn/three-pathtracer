@@ -1,19 +1,17 @@
 import * as THREE from "three";
-import Stats from "stats.js";
-
-import { setupStats } from "./setupStats";
 
 export class ShaderCanvas {
   private scene: THREE.Scene;
   private canvasCamera: THREE.OrthographicCamera;
+  private sceneCamera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private drawingBufferSize: THREE.Vector2;
   private material: THREE.ShaderMaterial;
   private clock = new THREE.Clock();
-  private stats?: Stats;
 
   constructor({
     canvas,
+    sceneCamera,
     fragmentShader,
     vertexShader = `
       varying vec2 vUv;
@@ -23,14 +21,15 @@ export class ShaderCanvas {
       }
     `,
     uniforms = {},
-    enableStats = false,
   }: {
     canvas: HTMLCanvasElement;
+    sceneCamera: THREE.PerspectiveCamera;
     fragmentShader: string;
     vertexShader?: string;
     uniforms?: Record<string, THREE.IUniform<any>>;
-    enableStats?: boolean;
   }) {
+    this.sceneCamera = sceneCamera;
+
     this.scene = new THREE.Scene();
 
     // Fullscreen camera (-1 to 1 space)
@@ -68,6 +67,11 @@ export class ShaderCanvas {
       this.renderer.setSize(window.innerWidth, window.innerHeight);
       this.renderer.getDrawingBufferSize(this.drawingBufferSize);
       this.material.uniforms.uResolution.value.copy(this.drawingBufferSize);
+      const verticalFov = THREE.MathUtils.degToRad(this.sceneCamera.fov);
+      const halfHeight = Math.tan(verticalFov / 2);
+      const halfWidth = halfHeight * this.sceneCamera.aspect;
+      this.material.uniforms.uCamera.value.halfHeight = halfHeight;
+      this.material.uniforms.uCamera.value.halfWidth = halfWidth;
     });
 
     // Handle mouse
@@ -91,10 +95,6 @@ export class ShaderCanvas {
     window.addEventListener("mouseup", () => {
       // currently not used, not tracking mouse click release
     });
-
-    if (enableStats) {
-      this.stats = setupStats();
-    }
   }
 
   public render() {

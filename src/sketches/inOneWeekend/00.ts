@@ -138,6 +138,7 @@ export default function (): THREE.WebGLRenderer {
     },
   };
   const shaderDemo = new ShaderCanvas({
+    sceneCamera: camera,
     canvas: canvas,
     fragmentShader: fragShader,
     uniforms: uniforms,
