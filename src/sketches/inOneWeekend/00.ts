@@ -379,6 +379,7 @@ export default function (): THREE.WebGLRenderer {
   // on mouse down check for intersection
   window.addEventListener("mousedown", (e) => {
     if (folder.domElement.contains(e.target as Node)) return;
+    if (transformControls.dragging) return;
     mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
     checkIntersection();
