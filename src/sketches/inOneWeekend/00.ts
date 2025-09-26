@@ -79,7 +79,7 @@ export default function (): THREE.WebGLRenderer {
     roughness: 0.0,
     metalness: 0.5,
   });
-  const sphereGeometry = new THREE.SphereGeometry();
+  const sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
   const sphereGround = new THREE.Mesh(sphereGeometry, materialGround);
   sphereGround.position.set(0, -100.5, 0);
   sphereGround.scale.set(100, 100, 100);
