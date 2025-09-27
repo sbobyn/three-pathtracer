@@ -217,8 +217,6 @@ export default function (): THREE.WebGLRenderer {
     selectedColor: "#000000",
   };
 
-  console.log("devicePixelRatio", renderer.getPixelRatio());
-
   const renderTarget = new THREE.WebGLRenderTarget(
     0,
     0, // will be set by composer.setSize later
