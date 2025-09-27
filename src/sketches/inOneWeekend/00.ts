@@ -49,6 +49,7 @@ export default function (): THREE.WebGLRenderer {
 
   const backgroundColorTop = new THREE.Color(0.5, 0.7, 1); // Sky blue background
   scene.background = backgroundColorTop;
+  const backgroundColorBottom = new THREE.Color(1, 1, 1); // White ground
 
   // Raytracing Canvas
 
@@ -190,6 +191,8 @@ export default function (): THREE.WebGLRenderer {
     uNumSamples: { value: 10 },
     uMaxRayDepth: { value: 10 },
     uMaterials: { value: materials },
+    uBackgroundColorTop: { value: backgroundColorTop },
+    uBackgroundColorBottom: { value: backgroundColorBottom },
   };
   // setup
   const shaderDemo = new ShaderCanvas({
@@ -217,6 +220,8 @@ export default function (): THREE.WebGLRenderer {
     selectedPosition: new THREE.Vector3(),
     selectedRadius: 0,
     selectedColor: "#000000",
+    backgroundColorTop: backgroundColorTop,
+    backgroundColorBottom: backgroundColorBottom,
   };
 
   const renderTarget = new THREE.WebGLRenderTarget(
@@ -263,6 +268,21 @@ export default function (): THREE.WebGLRenderer {
   // Debug GUI
   const folder = createSketchFolder("Scene");
   // menu to selct between raytracer and renderer
+
+  folder
+    .addColor(settings, "backgroundColorTop")
+    .onChange((value: string | number | THREE.Color) => {
+      const color = new THREE.Color(value);
+      scene.background = color;
+      dirLight.color = color;
+    });
+
+  folder
+    .addColor(settings, "backgroundColorBottom")
+    .onChange((value: string | number | THREE.Color) => {
+      const color = new THREE.Color(value);
+      uniforms.uBackgroundColorBottom.value = color;
+    });
 
   folder.add(camera, "fov", 10, 120, 1).onChange(() => {
     camera.updateProjectionMatrix();

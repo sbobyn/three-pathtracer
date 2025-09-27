@@ -3,6 +3,8 @@ precision highp float;
 varying vec2 vUv;
 
 uniform vec2 uResolution;
+uniform vec3 uBackgroundColorTop;
+uniform vec3 uBackgroundColorBottom;
 
 struct Camera {
     vec3 position;
@@ -222,7 +224,7 @@ vec3 rayColor(Ray
             vec3 unitDir = normalize(r.direction);
             float a = 0.5 * (unitDir.y + 1.0);
 
-            vec3 backgroundColor = (1.0 - a) * vec3(1) + a * vec3(0.5, 0.7, 1);
+            vec3 backgroundColor = mix(uBackgroundColorBottom, uBackgroundColorTop, a);
             color *= backgroundColor;
             break;
         }
