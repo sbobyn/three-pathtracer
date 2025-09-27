@@ -1,10 +1,15 @@
 precision highp float;
 
+#define PI 3.141592653
+
 varying vec2 vUv;
 
 uniform vec2 uResolution;
 uniform vec3 uBackgroundColorTop;
 uniform vec3 uBackgroundColorBottom;
+uniform int uMaxRayDepth;
+uniform float uNumSamples;
+uniform bool uEnableDoF;
 
 struct Camera {
     vec3 position;
@@ -13,6 +18,8 @@ struct Camera {
     vec3 right;
     float halfWidth;
     float halfHeight;
+    float focusDistance;
+    float aperture;
 };
 
 uniform Camera uCamera;
@@ -139,8 +146,6 @@ bool hitWorld(World world, Ray ray, Interval rayInt, out Hit hit) {
 //     return (1.0 - a) * vec3(1) + a * vec3(0.5, 0.7, 1);
 // }
 
-#define PI 3.141592653
-
 // source: Hash without Sine: https://www.shadertoy.com/view/4djSRW
 
 float hash12(vec2 p) {
@@ -176,6 +181,25 @@ vec3 random_in_unit_sphere(vec2 p) {
     float z = r * cos(theta);
 
     return vec3(x, y, z);
+}
+
+vec2 sample_unit_disk(vec2 u) {
+    // Concentric mapping (uniform, low distortion)
+    float a = 2.0 * u.x - 1.0;
+    float b = 2.0 * u.y - 1.0;
+
+    float r, phi;
+    if (a == 0.0 && b == 0.0) {
+        r = 0.0;
+        phi = 0.0;
+    } else if (abs(a) > abs(b)) {
+        r = a;
+        phi = (PI / 4.0) * (b / a);
+    } else {
+        r = b;
+        phi = (PI / 2.0) - (PI / 4.0) * (a / b);
+    }
+    return r * vec2(cos(phi), sin(phi));
 }
 
 vec3 random_unit_vector(vec2 p) {
@@ -240,8 +264,6 @@ vec3 scatter(Ray rayIn, Hit hit, vec2 seed) {
     return vec3(0);
 }
 
-uniform int uMaxRayDepth;
-
 vec3 rayColor(Ray
     r, World
     w, vec2
@@ -276,23 +298,37 @@ vec3 rayColor(Ray
     return color;
 }
 
-uniform float uNumSamples;
-
 void main() {
     vec3 color = vec3(0);
     for (int s = 0; s < int(uNumSamples); s++) {
         vec2 seed2 = vUv + vec2(float(s));
-        vec2 rand = hash22(seed2);
-        vec2 offset = (rand - 0.5) / uResolution;
-        vec2 uv = vUv + offset;
+        vec2 pixelOffset = hash22(seed2) - 0.5;
+        vec2 uv = vUv + pixelOffset / uResolution; // sample within pixel
 
-        vec3 rayDir = uCamera.forward
-                + uv.x * uCamera.halfWidth * uCamera.right
-                + uv.y * uCamera.halfHeight * uCamera.up;
+        // get pixel sample position
+        vec3 pixelSampleDir = normalize(
+                uCamera.forward
+                    + uv.x * uCamera.halfWidth * uCamera.right
+                    + uv.y * uCamera.halfHeight * uCamera.up
+            );
+        vec3 pixelSample = uCamera.position + pixelSampleDir * uCamera.focusDistance;
 
-        Ray ray = Ray(uCamera.position, normalize(rayDir));
+        // sample defocus disk for Depth of Field
+
+        vec3 defocusOffset = vec3(0);
+        if (uEnableDoF) {
+            float defocusRadius = uCamera.aperture / 2.;
+            vec2 defocusDiskSample = defocusRadius * sample_unit_disk(hash22(seed2 * 31.));
+            defocusOffset = defocusDiskSample.x * uCamera.right + defocusDiskSample.y * uCamera.up;
+        }
+
+        vec3 origin = uCamera.position + defocusOffset;
+        vec3 direction = normalize(pixelSample - origin);
+
+        Ray ray = Ray(origin, direction);
         color += rayColor(ray, uWorld, seed2);
     }
+
     color /= uNumSamples;
 
     gl_FragColor = vec4(color, 1.0);

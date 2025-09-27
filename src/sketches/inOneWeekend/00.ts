@@ -51,6 +51,19 @@ export default function (): THREE.WebGLRenderer {
   scene.background = backgroundColorTop;
   const backgroundColorBottom = new THREE.Color(1, 1, 1); // White ground
 
+  const settings = {
+    raytracingEnabled: true,
+    selectedPosition: new THREE.Vector3(),
+    selectedRadius: 0,
+    selectedColor: "#000000",
+    selectedFuzz: 0,
+    backgroundColorTop: backgroundColorTop,
+    backgroundColorBottom: backgroundColorBottom,
+    enableDepthOfField: false,
+    aperture: 0.0,
+    focusDistance: 1.0,
+  };
+
   // Raytracing Canvas
 
   const cameraForward = new THREE.Vector3();
@@ -190,6 +203,8 @@ export default function (): THREE.WebGLRenderer {
         right: cameraRight,
         halfWidth: halfWidth,
         halfHeight: halfHeight,
+        focusDistance: settings.focusDistance,
+        aperture: settings.aperture,
       },
     },
     uWorld: {
@@ -203,6 +218,7 @@ export default function (): THREE.WebGLRenderer {
     uMaterials: { value: materials },
     uBackgroundColorTop: { value: backgroundColorTop },
     uBackgroundColorBottom: { value: backgroundColorBottom },
+    uEnableDoF: { value: settings.enableDepthOfField },
   };
   // setup
   const shaderDemo = new ShaderCanvas({
@@ -225,15 +241,6 @@ export default function (): THREE.WebGLRenderer {
   });
 
   // Post-processing
-  const settings = {
-    raytracingEnabled: true,
-    selectedPosition: new THREE.Vector3(),
-    selectedRadius: 0,
-    selectedColor: "#000000",
-    selectedFuzz: 0,
-    backgroundColorTop: backgroundColorTop,
-    backgroundColorBottom: backgroundColorBottom,
-  };
 
   const renderTarget = new THREE.WebGLRenderTarget(
     0,
@@ -280,6 +287,8 @@ export default function (): THREE.WebGLRenderer {
   const folder = createSketchFolder("Scene");
   // menu to selct between raytracer and renderer
 
+  const raytracingToggleGUI = folder.add(settings, "raytracingEnabled");
+
   folder
     .addColor(settings, "backgroundColorTop")
     .onChange((value: string | number | THREE.Color) => {
@@ -303,8 +312,6 @@ export default function (): THREE.WebGLRenderer {
     uniforms.uCamera.value.halfWidth =
       uniforms.uCamera.value.halfHeight * camera.aspect;
   });
-
-  const raytracingToggleGUI = folder.add(settings, "raytracingEnabled");
 
   const raytracingSettingsFolder = folder.addFolder("Raytracing Settings");
   if (!settings.raytracingEnabled) {
@@ -332,6 +339,33 @@ export default function (): THREE.WebGLRenderer {
       raytracingSettingsFolder.show();
     } else {
       raytracingSettingsFolder.hide();
+    }
+  });
+
+  const toggleDoFGUI = raytracingSettingsFolder.add(
+    settings,
+    "enableDepthOfField"
+  );
+  const apertureGUI = raytracingSettingsFolder
+    .add(settings, "aperture", 0, 0.1, 0.001)
+    .onChange((value: number) => {
+      uniforms.uCamera.value.aperture = value;
+    });
+  if (!settings.enableDepthOfField) apertureGUI.disable();
+  const focusDistGUI = raytracingSettingsFolder
+    .add(settings, "focusDistance", 0.1, 10, 0.1)
+    .onChange((value: number) => {
+      uniforms.uCamera.value.focusDistance = value;
+    });
+  if (!settings.enableDepthOfField) focusDistGUI.disable();
+  toggleDoFGUI.onChange((value: boolean) => {
+    uniforms.uEnableDoF.value = value;
+    if (value) {
+      apertureGUI.enable();
+      focusDistGUI.enable();
+    } else {
+      apertureGUI.disable();
+      focusDistGUI.disable();
     }
   });
 
