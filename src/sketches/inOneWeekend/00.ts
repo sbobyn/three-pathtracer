@@ -217,9 +217,13 @@ export default function (): THREE.WebGLRenderer {
     selectedColor: "#000000",
   };
 
-  const renderTarget = new THREE.WebGLRenderTarget(0, 0, {
-    samples: window.devicePixelRatio === 1 ? 2 : 1,
-  });
+  const renderTarget = new THREE.WebGLRenderTarget(
+    0,
+    0, // will be set by composer.setSize later
+    {
+      samples: window.devicePixelRatio === 1 ? 2 : 1,
+    }
+  );
   const composer = new EffectComposer(renderer, renderTarget);
   composer.setSize(window.innerWidth, window.innerHeight);
   composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
