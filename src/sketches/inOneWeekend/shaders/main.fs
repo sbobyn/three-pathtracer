@@ -31,9 +31,10 @@ float lengthSquared(vec3 a) {
 }
 
 struct Material {
-    int type; // 0: lambertian
+    int type; // 0: lambertian, 1: metal, 2: dielectric
     vec3 albedo;
     float fuzz; // (roughness) only for metal
+    float ior; // (index of refraction) only for dielectric
 };
 
 struct Sphere {
@@ -141,6 +142,13 @@ bool hitWorld(World world, Ray ray, Interval rayInt, out Hit hit) {
 #define PI 3.141592653
 
 // source: Hash without Sine: https://www.shadertoy.com/view/4djSRW
+
+float hash12(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * .1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+}
+
 vec2 hash22(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * vec3(.1031, .1030, .0973));
     p3 += dot(p3, p3.yzx + 33.33);
@@ -193,12 +201,40 @@ vec3 scatterMetal(Ray rayIn, Hit hit, vec2 seed, float fuzz) {
     return dot(reflected, hit.normal) > 0.0 ? normalize(reflected) : scatterDir;
 }
 
+// Schlick approximation for reflectance
+float reflectance(float cosine, float ior) {
+    float r0 = (1. - ior) / (1. + ior);
+    r0 = r0 * r0;
+    return r0 + (1. - r0) * pow((1. - cosine), 5.);
+}
+
+vec3 scatterDialectric(Ray rayIn, Hit hit, vec2 seed) {
+    float ior = hit.frontFace ? 1.0 / uMaterials[hit.materialId].ior : uMaterials[hit.materialId].ior;
+    vec3 unitDir = normalize(rayIn.direction);
+
+    float cosTheta = min(dot(-unitDir, hit.normal), 1.0);
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+
+    bool cannotRefract = ior * sinTheta > 1.0; // glancing ray
+    bool schlick = reflectance(cosTheta, ior) > hash12(seed);
+
+    if (cannotRefract || schlick) {
+        return reflect(unitDir, hit.normal);
+    }
+
+    else {
+        return refract(unitDir, hit.normal, ior);
+    }
+}
+
 vec3 scatter(Ray rayIn, Hit hit, vec2 seed) {
     if (uMaterials[hit.materialId].type == 0) { // lambertian
         return scatterLambert(hit, seed);
     } else if (uMaterials[hit.materialId].type == 1) { // metal
         float fuzz = uMaterials[hit.materialId].fuzz;
         return scatterMetal(rayIn, hit, seed, fuzz);
+    } else if (uMaterials[hit.materialId].type == 2) { // dielectric
+        return scatterDialectric(rayIn, hit, seed);
     }
 
     return vec3(0);

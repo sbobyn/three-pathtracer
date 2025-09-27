@@ -72,9 +72,13 @@ export default function (): THREE.WebGLRenderer {
   const materialCenter = new THREE.MeshLambertMaterial({
     color: new THREE.Color(0.1, 0.2, 0.5),
   });
-  const materialLeft = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(0.8, 0.8, 0.8),
-    roughness: 0.3,
+  // const materialLeft = new THREE.MeshStandardMaterial({
+  //   color: new THREE.Color(0.8, 0.8, 0.8),
+  //   roughness: 0.3,
+  // });
+  const materialLeft = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color(1, 1, 1),
+    ior: 1 / 1.33,
   });
   const materialRight = new THREE.MeshStandardMaterial({
     color: new THREE.Color(0.8, 0.6, 0.2),
@@ -129,21 +133,25 @@ export default function (): THREE.WebGLRenderer {
       type: 0,
       albedo: materialGround.color,
       fuzz: 0.0,
+      ior: 0.0,
     },
     {
       type: 0,
       albedo: materialCenter.color,
       fuzz: 0.0,
+      ior: 0.0,
     },
     {
-      type: 1,
+      type: 2,
       albedo: materialLeft.color,
       fuzz: materialLeft.roughness,
+      ior: materialLeft.ior,
     },
     {
       type: 1,
       albedo: materialRight.color,
       fuzz: materialRight.roughness,
+      ior: 0,
     },
   ];
 
@@ -369,13 +377,19 @@ export default function (): THREE.WebGLRenderer {
     .name("radius");
 
   let materialFolder = selctedObjectFolder.addFolder("Material");
+
+  const materialLabelDict = {
+    0: "Lambert",
+    1: "Metal",
+    2: "Dielectric",
+  };
   function populateMaterialGUI(
     material: THREE.MeshStandardMaterial,
     materialId: number
   ) {
     materialFolder.destroy();
-    const materialType =
-      material instanceof THREE.MeshStandardMaterial ? "Metal" : "Lambert";
+    const materialType = materialLabelDict[materials[materialId].type];
+
     materialFolder = selctedObjectFolder.addFolder(
       `Material - ${materialId} - ${materialType}`
     );
@@ -384,11 +398,20 @@ export default function (): THREE.WebGLRenderer {
       material.needsUpdate = true;
     });
 
-    if (material instanceof THREE.MeshStandardMaterial) {
+    if (materialType === "Metal") {
       if ("roughness" in material) {
         materialFolder.add(material, "roughness", 0, 1).onChange(() => {
           material.needsUpdate = true;
           materials[materialId].fuzz = material.roughness;
+        });
+      }
+    }
+
+    if (materialType === "Dielectric") {
+      if ("ior" in material) {
+        materialFolder.add(material, "ior", 0, 2.5).onChange(() => {
+          material.needsUpdate = true;
+          materials[materialId].ior = material.ior;
         });
       }
     }
