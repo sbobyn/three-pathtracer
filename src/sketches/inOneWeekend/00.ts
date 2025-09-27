@@ -211,13 +211,18 @@ export default function (): THREE.WebGLRenderer {
 
   // Post-processing
   const settings = {
-    raytracingEnabled: true,
+    raytracingEnabled: false,
     selectedPosition: new THREE.Vector3(),
     selectedRadius: 0,
     selectedColor: "#000000",
   };
 
-  const composer = new EffectComposer(renderer);
+  const renderTarget = new THREE.WebGLRenderTarget(0, 0, {
+    samples: window.devicePixelRatio === 1 ? 2 : 1,
+  });
+  const composer = new EffectComposer(renderer, renderTarget);
+  composer.setSize(window.innerWidth, window.innerHeight);
+  composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
   window.addEventListener("resize", () => {
     composer.setSize(window.innerWidth, window.innerHeight);
