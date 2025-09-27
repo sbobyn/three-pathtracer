@@ -218,6 +218,12 @@ export default function (): THREE.WebGLRenderer {
   };
 
   const composer = new EffectComposer(renderer);
+
+  window.addEventListener("resize", () => {
+    composer.setSize(window.innerWidth, window.innerHeight);
+    composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  });
+
   const renderPass = new RenderPass(scene, camera);
   renderPass.enabled = !settings.raytracingEnabled;
   composer.addPass(renderPass);
