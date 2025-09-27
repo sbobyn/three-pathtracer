@@ -8,6 +8,8 @@ import { EffectComposer } from "three/examples/jsm/Addons.js";
 import { RenderPass } from "three/examples/jsm/Addons.js";
 import { OutlinePass } from "three/examples/jsm/Addons.js";
 import { TransformControls } from "three/examples/jsm/Addons.js";
+import { ShaderPass } from "three/examples/jsm/Addons.js";
+import { GammaCorrectionShader } from "three/examples/jsm/Addons.js";
 
 const objectSpaceNormalMaterial = new THREE.ShaderMaterial({
   vertexShader: /* glsl */ `
@@ -45,8 +47,8 @@ export default function (): THREE.WebGLRenderer {
 
   renderer.shadowMap.enabled = true;
 
-  const skyColor = new THREE.Color(0xd1dfed); // Sky blue background
-  scene.background = skyColor;
+  const backgroundColorTop = new THREE.Color(0.5, 0.7, 1); // Sky blue background
+  scene.background = backgroundColorTop;
 
   // Raytracing Canvas
 
@@ -58,8 +60,8 @@ export default function (): THREE.WebGLRenderer {
 
   const worldUp = new THREE.Vector3(0, 1, 0);
 
-  scene.add(new THREE.AmbientLight(skyColor, 0.5));
-  const dirLight = new THREE.DirectionalLight(skyColor, 4);
+  scene.add(new THREE.AmbientLight(backgroundColorTop, 0.5));
+  const dirLight = new THREE.DirectionalLight(backgroundColorTop, 4);
   dirLight.castShadow = true;
   scene.add(dirLight);
 
@@ -250,6 +252,9 @@ export default function (): THREE.WebGLRenderer {
     camera
   );
   composer.addPass(outlinePass);
+
+  const gammaCorrectionPass = new ShaderPass(GammaCorrectionShader);
+  composer.addPass(gammaCorrectionPass);
 
   const gizmo = transformControls.getHelper();
   const gizmoScene = new THREE.Scene();

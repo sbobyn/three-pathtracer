@@ -254,6 +254,5 @@ void main() {
     }
     color /= uNumSamples;
 
-    color = sqrt(color); // gamma correction
     gl_FragColor = vec4(color, 1.0);
 }
