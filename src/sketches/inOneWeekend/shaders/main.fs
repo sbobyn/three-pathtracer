@@ -33,6 +33,7 @@ float lengthSquared(vec3 a) {
 struct Material {
     int type; // 0: lambertian
     vec3 albedo;
+    float fuzz; // (roughness) only for metal
 };
 
 struct Sphere {
@@ -186,16 +187,18 @@ vec3 scatterLambert(Hit hit, vec2 seed) {
     return normalize(scatterDir);
 }
 
-vec3 scatterMetal(Ray rayIn, Hit hit, vec2 seed) {
-    vec3 scatterDir = reflect(rayIn.direction, hit.normal);
-    return normalize(scatterDir);
+vec3 scatterMetal(Ray rayIn, Hit hit, vec2 seed, float fuzz) {
+    vec3 scatterDir = normalize(reflect(rayIn.direction, hit.normal));
+    vec3 reflected = scatterDir + fuzz * random_unit_vector(seed);
+    return dot(reflected, hit.normal) > 0.0 ? normalize(reflected) : scatterDir;
 }
 
 vec3 scatter(Ray rayIn, Hit hit, vec2 seed) {
     if (uMaterials[hit.materialId].type == 0) { // lambertian
         return scatterLambert(hit, seed);
     } else if (uMaterials[hit.materialId].type == 1) { // metal
-        return scatterMetal(rayIn, hit, seed);
+        float fuzz = uMaterials[hit.materialId].fuzz;
+        return scatterMetal(rayIn, hit, seed, fuzz);
     }
 
     return vec3(0);

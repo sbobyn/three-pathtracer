@@ -74,13 +74,11 @@ export default function (): THREE.WebGLRenderer {
   });
   const materialLeft = new THREE.MeshStandardMaterial({
     color: new THREE.Color(0.8, 0.8, 0.8),
-    roughness: 0.0,
-    metalness: 0.2,
+    roughness: 0.3,
   });
   const materialRight = new THREE.MeshStandardMaterial({
     color: new THREE.Color(0.8, 0.6, 0.2),
-    roughness: 0.0,
-    metalness: 0.5,
+    roughness: 1.0,
   });
   const sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
   const sphereGround = new THREE.Mesh(sphereGeometry, materialGround);
@@ -130,18 +128,22 @@ export default function (): THREE.WebGLRenderer {
     {
       type: 0,
       albedo: materialGround.color,
+      fuzz: 0.0,
     },
     {
       type: 0,
       albedo: materialCenter.color,
+      fuzz: 0.0,
     },
     {
       type: 1,
       albedo: materialLeft.color,
+      fuzz: materialLeft.roughness,
     },
     {
       type: 1,
       albedo: materialRight.color,
+      fuzz: materialRight.roughness,
     },
   ];
 
