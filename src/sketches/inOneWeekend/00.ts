@@ -222,6 +222,7 @@ export default function (): THREE.WebGLRenderer {
     selectedPosition: new THREE.Vector3(),
     selectedRadius: 0,
     selectedColor: "#000000",
+    selectedFuzz: 0,
     backgroundColorTop: backgroundColorTop,
     backgroundColorBottom: backgroundColorBottom,
   };
@@ -366,16 +367,34 @@ export default function (): THREE.WebGLRenderer {
       }
     })
     .name("radius");
-  const selectedObjectColorGUI = selctedObjectFolder
-    .addColor(settings, "selectedColor")
-    .onChange((value: string) => {
-      if (selectedObject) {
-        const color = new THREE.Color(value);
-        materials[spheres[selectedObject.index].materialId].albedo = color;
-        selectedObject.material.color = color;
+
+  let materialFolder = selctedObjectFolder.addFolder("Material");
+  function populateMaterialGUI(
+    material: THREE.MeshStandardMaterial,
+    materialId: number
+  ) {
+    materialFolder.destroy();
+    const materialType =
+      material instanceof THREE.MeshStandardMaterial ? "Metal" : "Lambert";
+    materialFolder = selctedObjectFolder.addFolder(
+      `Material - ${materialId} - ${materialType}`
+    );
+
+    materialFolder.addColor(material, "color").onChange(() => {
+      material.needsUpdate = true;
+    });
+
+    if (material instanceof THREE.MeshStandardMaterial) {
+      if ("roughness" in material) {
+        materialFolder.add(material, "roughness", 0, 1).onChange(() => {
+          material.needsUpdate = true;
+          materials[materialId].fuzz = material.roughness;
+        });
       }
-    })
-    .name("color");
+    }
+
+    materialFolder.show();
+  }
 
   selctedObjectFolder.hide();
 
@@ -410,7 +429,10 @@ export default function (): THREE.WebGLRenderer {
         materials[
           spheres[selectedObject.index].materialId
         ].albedo.getHexString();
-      selectedObjectColorGUI.updateDisplay();
+      populateMaterialGUI(
+        selectedObject.material,
+        spheres[selectedObject.index].materialId
+      );
     } else {
       outlinePass.selectedObjects = [];
       transformControls.detach();
