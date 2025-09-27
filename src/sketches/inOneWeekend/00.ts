@@ -211,7 +211,7 @@ export default function (): THREE.WebGLRenderer {
 
   // Post-processing
   const settings = {
-    raytracingEnabled: false,
+    raytracingEnabled: true,
     selectedPosition: new THREE.Vector3(),
     selectedRadius: 0,
     selectedColor: "#000000",
