@@ -236,7 +236,7 @@ vec3 scatterDialectric(Ray rayIn, Hit hit, vec2 seed) {
     vec3 unitDir = normalize(rayIn.direction);
 
     float cosTheta = min(dot(-unitDir, hit.normal), 1.0);
-    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+    float sinTheta = sqrt(abs(1.0 - cosTheta * cosTheta) + 1e-4);
 
     bool cannotRefract = ior * sinTheta > 1.0; // glancing ray
     bool schlick = reflectance(cosTheta, ior) > hash12(seed);
