@@ -287,8 +287,11 @@ export default function (): THREE.WebGLRenderer {
   const folder = createSketchFolder("Scene");
   // menu to selct between raytracer and renderer
 
-  const raytracingToggleGUI = folder.add(settings, "raytracingEnabled");
-
+  const raytracingToggleGUI = folder
+    .add(settings, "raytracingEnabled")
+    .onChange(() => {
+      shaderDemo.resetAccumulation();
+    });
   folder
     .addColor(settings, "backgroundColorTop")
     .onChange((value: string | number | THREE.Color) => {
