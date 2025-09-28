@@ -295,6 +295,7 @@ export default function (): THREE.WebGLRenderer {
       const color = new THREE.Color(value);
       scene.background = color;
       dirLight.color = color;
+      shaderDemo.resetAccumulation();
     });
 
   folder
@@ -302,6 +303,7 @@ export default function (): THREE.WebGLRenderer {
     .onChange((value: string | number | THREE.Color) => {
       const color = new THREE.Color(value);
       uniforms.uBackgroundColorBottom.value = color;
+      shaderDemo.resetAccumulation();
     });
 
   folder.add(camera, "fov", 10, 120, 1).onChange(() => {
@@ -311,6 +313,7 @@ export default function (): THREE.WebGLRenderer {
     );
     uniforms.uCamera.value.halfWidth =
       uniforms.uCamera.value.halfHeight * camera.aspect;
+    shaderDemo.resetAccumulation();
   });
 
   const raytracingSettingsFolder = folder.addFolder("Raytracing Settings");
@@ -320,10 +323,16 @@ export default function (): THREE.WebGLRenderer {
 
   raytracingSettingsFolder
     .add(uniforms.uNumSamples, "value", 1, 20, 1)
+    .onChange(() => {
+      shaderDemo.resetAccumulation();
+    })
     .name("Samples");
 
   raytracingSettingsFolder
     .add(uniforms.uMaxRayDepth, "value", 1, 20, 1)
+    .onChange(() => {
+      shaderDemo.resetAccumulation();
+    })
     .name("Max Ray Depth");
 
   raytracingSettingsFolder
@@ -350,12 +359,14 @@ export default function (): THREE.WebGLRenderer {
     .add(settings, "aperture", 0, 0.1, 0.001)
     .onChange((value: number) => {
       uniforms.uCamera.value.aperture = value;
+      shaderDemo.resetAccumulation();
     });
   if (!settings.enableDepthOfField) apertureGUI.disable();
   const focusDistGUI = raytracingSettingsFolder
     .add(settings, "focusDistance", 0.1, 10, 0.1)
     .onChange((value: number) => {
       uniforms.uCamera.value.focusDistance = value;
+      shaderDemo.resetAccumulation();
     });
   if (!settings.enableDepthOfField) focusDistGUI.disable();
   toggleDoFGUI.onChange((value: boolean) => {
@@ -367,6 +378,7 @@ export default function (): THREE.WebGLRenderer {
       apertureGUI.disable();
       focusDistGUI.disable();
     }
+    shaderDemo.resetAccumulation();
   });
 
   const selctedObjectFolder = folder.addFolder("Selected Object");
@@ -430,6 +442,8 @@ export default function (): THREE.WebGLRenderer {
 
     materialFolder.addColor(material, "color").onChange(() => {
       material.needsUpdate = true;
+      materials[materialId].albedo = material.color;
+      shaderDemo.resetAccumulation();
     });
 
     if (materialType === "Metal") {
@@ -437,6 +451,7 @@ export default function (): THREE.WebGLRenderer {
         materialFolder.add(material, "roughness", 0, 1).onChange(() => {
           material.needsUpdate = true;
           materials[materialId].fuzz = material.roughness;
+          shaderDemo.resetAccumulation();
         });
       }
     }
@@ -446,6 +461,7 @@ export default function (): THREE.WebGLRenderer {
         materialFolder.add(material, "ior", 0, 2.5).onChange(() => {
           material.needsUpdate = true;
           materials[materialId].ior = material.ior;
+          shaderDemo.resetAccumulation();
         });
       }
     }
@@ -504,6 +520,14 @@ export default function (): THREE.WebGLRenderer {
     mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
     checkIntersection();
+  });
+
+  controls?.addEventListener("change", () => {
+    shaderDemo.resetAccumulation();
+  });
+
+  transformControls.addEventListener("change", () => {
+    shaderDemo.resetAccumulation();
   });
 
   // render loop

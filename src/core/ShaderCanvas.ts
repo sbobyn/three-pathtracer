@@ -13,7 +13,8 @@ export class ShaderCanvas {
   public screenCamera: THREE.OrthographicCamera;
 
   public resolutionScale: number;
-  public renderTarget: THREE.WebGLRenderTarget;
+  private pingRenderTarget: THREE.WebGLRenderTarget;
+  private pongRenderTarget: THREE.WebGLRenderTarget;
 
   constructor({
     width,
@@ -53,6 +54,8 @@ export class ShaderCanvas {
             resolutionScale
           ),
         },
+        uAccumTexture: { value: null },
+        uFrameCount: { value: 0 },
         ...uniforms,
       },
     });
@@ -60,7 +63,7 @@ export class ShaderCanvas {
     const mesh = new THREE.Mesh(geometry, this.material);
     this.scene.add(mesh);
 
-    this.renderTarget = new THREE.WebGLRenderTarget(
+    this.pingRenderTarget = new THREE.WebGLRenderTarget(
       width * resolutionScale,
       height * resolutionScale,
       {
@@ -70,10 +73,11 @@ export class ShaderCanvas {
         depthBuffer: false,
       }
     );
+    this.pongRenderTarget = this.pingRenderTarget.clone();
 
     // Create a fullscreen quad in your main scene to show the raytracer output
     this.screenMaterial = new THREE.MeshBasicMaterial({
-      map: this.renderTarget.texture,
+      map: this.pongRenderTarget.texture,
     });
     const screenQuad = new THREE.Mesh(
       new THREE.PlaneGeometry(2, 2),
@@ -91,31 +95,47 @@ export class ShaderCanvas {
   }
 
   public render(renderer: THREE.WebGLRenderer) {
+    renderer.setRenderTarget(this.pongRenderTarget);
+
     this.material.uniforms.uTime.value = this.clock.getElapsedTime();
-    renderer.setRenderTarget(this.renderTarget);
+    this.material.uniforms.uFrameCount.value++;
+    this.material.uniforms.uAccumTexture.value = this.pingRenderTarget.texture;
+    this.material.needsUpdate = true;
+
     renderer.render(this.scene, this.canvasCamera);
     renderer.setRenderTarget(null);
-    this.screenMaterial.map = this.renderTarget.texture;
+    this.screenMaterial.map = this.pongRenderTarget.texture;
+
+    [this.pingRenderTarget, this.pongRenderTarget] = [
+      this.pongRenderTarget,
+      this.pingRenderTarget,
+    ];
   }
 
   public setDimensions(width: number, height: number) {
-    this.renderTarget.setSize(width, height);
+    this.pingRenderTarget.setSize(width, height);
+    this.pongRenderTarget.setSize(width, height);
     this.material.uniforms.uResolution.value.set(width, height);
+    this.resetAccumulation();
   }
-
-  // public setResolutionScale(scale: number) {
-  //   this.resolutionScale = scale;
-  //   this.renderTarget.setSize(this.width * scale, this.height * scale);
-  // }
 
   public updateRenderTarget() {
     this.material.uniforms.uResolution.value.set(
       this.width * this.resolutionScale,
       this.height * this.resolutionScale
     );
-    this.renderTarget.setSize(
+    this.pingRenderTarget.setSize(
       this.width * this.resolutionScale,
       this.height * this.resolutionScale
     );
+    this.pongRenderTarget.setSize(
+      this.width * this.resolutionScale,
+      this.height * this.resolutionScale
+    );
+    this.resetAccumulation();
+  }
+
+  public resetAccumulation() {
+    this.material.uniforms.uFrameCount.value = 0;
   }
 }

@@ -10,6 +10,8 @@ uniform vec3 uBackgroundColorBottom;
 uniform int uMaxRayDepth;
 uniform float uNumSamples;
 uniform bool uEnableDoF;
+uniform sampler2D uAccumTexture;
+uniform int uFrameCount;
 
 struct Camera {
     vec3 position;
@@ -298,7 +300,7 @@ vec3 rayColor(Ray
 void main() {
     vec3 color = vec3(0);
     for (int s = 0; s < int(uNumSamples); s++) {
-        vec2 seed2 = vUv + vec2(float(s));
+        vec2 seed2 = vUv + vec2(float(s) + float(uFrameCount) * 7.777);
         vec2 pixelOffset = hash22(seed2) - 0.5;
         vec2 uv = vUv + pixelOffset / uResolution; // sample within pixel
 
@@ -327,6 +329,11 @@ void main() {
     }
 
     color /= uNumSamples;
+
+    if (uFrameCount > 0) {
+        vec3 accumColor = texture2D(uAccumTexture, gl_FragCoord.xy / uResolution).rgb;
+        color = mix(accumColor, color, 1.0 / float(uFrameCount + 1));
+    }
 
     gl_FragColor = vec4(color, 1.0);
 }
