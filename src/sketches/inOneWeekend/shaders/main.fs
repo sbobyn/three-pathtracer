@@ -166,24 +166,21 @@ vec3 hash32(vec2 p) {
     return fract((p3.xxy + p3.yzz) * p3.zyx);
 }
 
-// analytical random in unit sphere https://www.shadertoy.com/view/7tBXDh
-vec3 random_in_unit_sphere(vec2 p) {
+vec3 randomOnUnitSphere(vec2 p) {
     vec3 rand = hash32(p);
     float phi = 2.0 * PI * rand.x;
     float cosTheta = 2.0 * rand.y - 1.0;
-    float u = rand.z;
 
     float theta = acos(cosTheta);
-    float r = pow(u, 1.0 / 3.0);
 
-    float x = r * sin(theta) * cos(phi);
-    float y = r * sin(theta) * sin(phi);
-    float z = r * cos(theta);
+    float x = sin(theta) * cos(phi);
+    float y = sin(theta) * sin(phi);
+    float z = cos(theta);
 
     return vec3(x, y, z);
 }
 
-vec2 sample_unit_disk(vec2 u) {
+vec2 sampleUnitDisk(vec2 u) {
     // Concentric mapping (uniform, low distortion)
     float a = 2.0 * u.x - 1.0;
     float b = 2.0 * u.y - 1.0;
@@ -203,12 +200,12 @@ vec2 sample_unit_disk(vec2 u) {
 }
 
 vec3 random_unit_vector(vec2 p) {
-    return normalize(random_in_unit_sphere(p));
+    return normalize(randomOnUnitSphere(p));
 }
 
 bool nearZero(vec3 p) {
     float s = 1e-8;
-    return p.x < s && p.y < s && p.z < s;
+    return abs(p.x) < s && abs(p.y) < s && abs(p.z) < s;
 }
 
 vec3 scatterLambert(Hit hit, vec2 seed) {
@@ -318,7 +315,7 @@ void main() {
         vec3 defocusOffset = vec3(0);
         if (uEnableDoF) {
             float defocusRadius = uCamera.aperture / 2.;
-            vec2 defocusDiskSample = defocusRadius * sample_unit_disk(hash22(seed2 * 31.));
+            vec2 defocusDiskSample = defocusRadius * sampleUnitDisk(hash22(seed2 * 31.));
             defocusOffset = defocusDiskSample.x * uCamera.right + defocusDiskSample.y * uCamera.up;
         }
 
