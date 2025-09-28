@@ -199,8 +199,8 @@ vec2 sampleUnitDisk(vec2 u) {
     return r * vec2(cos(phi), sin(phi));
 }
 
-vec3 random_unit_vector(vec2 p) {
-    return normalize(randomOnUnitSphere(p));
+vec3 randomUnitVector(vec2 p) {
+    return randomOnUnitSphere(p);
 }
 
 bool nearZero(vec3 p) {
@@ -209,7 +209,7 @@ bool nearZero(vec3 p) {
 }
 
 vec3 scatterLambert(Hit hit, vec2 seed) {
-    vec3 scatterDir = hit.normal + random_unit_vector(seed);
+    vec3 scatterDir = hit.normal + randomUnitVector(seed);
     if (nearZero(scatterDir)) { // catch degenerate scatter direction
         scatterDir = hit.normal;
     }
@@ -218,7 +218,7 @@ vec3 scatterLambert(Hit hit, vec2 seed) {
 
 vec3 scatterMetal(Ray rayIn, Hit hit, vec2 seed, float fuzz) {
     vec3 scatterDir = normalize(reflect(rayIn.direction, hit.normal));
-    vec3 reflected = scatterDir + fuzz * random_unit_vector(seed);
+    vec3 reflected = scatterDir + fuzz * randomUnitVector(seed);
     return dot(reflected, hit.normal) > 0.0 ? normalize(reflected) : scatterDir;
 }
 
