@@ -84,10 +84,6 @@ const materialGround = new THREE.MeshLambertMaterial({
 const materialCenter = new THREE.MeshLambertMaterial({
   color: new THREE.Color(0.1, 0.2, 0.5),
 });
-// const materialLeft = new THREE.MeshStandardMaterial({
-//   color: new THREE.Color(0.8, 0.8, 0.8),
-//   roughness: 0.3,
-// });
 const materialLeft = new THREE.MeshPhysicalMaterial({
   color: new THREE.Color(1, 1, 1),
   ior: 1 / 1.33,
