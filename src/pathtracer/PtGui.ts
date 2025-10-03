@@ -218,8 +218,6 @@ export default class PtGui {
       true
     );
 
-    console.log(this.intersectGroup.children);
-
     if (intersects.length > 0) {
       this.selectedObject = intersects[0].object;
 

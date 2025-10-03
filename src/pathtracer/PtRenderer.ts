@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { createFullScreenPerspectiveCamera } from "../core/createFullscreenCamera";
-import { setupScene } from "../core/setupScene";
 import { ShaderCanvas } from "../core/ShaderCanvas";
 import fragShader from "./shaders/main.fs";
 import {
@@ -73,19 +72,21 @@ export default class PtRenderer {
       lookAt: new THREE.Vector3(0, 0.5, 0),
       far: 10000,
     });
-    const { scene, renderer, controls } = setupScene({
+
+    this.controls = new OrbitControls(this.camera, canvas);
+    this.controls.enableDamping = true;
+
+    this.renderer = new THREE.WebGLRenderer({
       canvas: canvas,
-      camera: this.camera,
-      enableOrbitControls: true,
     });
-    this.scene = scene;
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.autoClear = false;
+
+    this.scene = new THREE.Scene();
     this.scene.background = this.backgroundColorTop;
     this.dirLight = new THREE.DirectionalLight(this.backgroundColorTop, 1.0);
     this.scene.add(this.dirLight);
-
-    this.renderer = renderer;
-    this.renderer.autoClear = false;
-    this.controls = controls;
 
     this.clock = new THREE.Clock();
 
@@ -170,7 +171,7 @@ export default class PtRenderer {
     this.gizmoScene.add(this.gizmo);
 
     this.clock = new THREE.Clock();
-    renderer.setAnimationLoop(this.renderLoop.bind(this));
+    this.renderer.setAnimationLoop(this.renderLoop.bind(this));
   }
 
   private setupComposer() {
@@ -241,6 +242,11 @@ export default class PtRenderer {
 
     this.transformControls.addEventListener("change", () => {
       this.shaderDemo.resetAccumulation();
+    });
+
+    window.addEventListener("resize", () => {
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     });
   }
 }
