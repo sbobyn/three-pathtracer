@@ -227,6 +227,8 @@ export default class PtGui {
       this.selctedObjectFolder.show();
       // radius display must be manually updated
 
+      console.log(this.selectedObject.index);
+
       ptRenderer.settings.selectedRadius =
         ptScene.spheres[this.selectedObject.index].radius;
       this.selectedRadiusGUI.updateDisplay();

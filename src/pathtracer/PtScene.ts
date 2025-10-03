@@ -61,7 +61,10 @@ export default class PtScene {
 
       const sphereMesh = new THREE.Mesh(sphereGeometry, material);
       sphereMesh.position.copy(sphere.position);
+      sphere.position = sphereMesh.position; // Ensure reference is the same. TODO : cleaner solution
       sphereMesh.scale.set(sphere.radius, sphere.radius, sphere.radius);
+
+      sphereMesh.index = i; // For identification in ray intersection. TODO : cleaner solution
 
       this.intersectGroup.add(sphereMesh);
     }
