@@ -102,7 +102,6 @@ export default class PtRenderer {
       uWorld: {
         value: {
           spheres: this.ptScene.spheres,
-          numSpheres: this.ptScene.spheres.length,
         },
       },
       uNumSamples: { value: 10 },
@@ -116,7 +115,8 @@ export default class PtRenderer {
     this.shaderDemo = new ShaderCanvas({
       width: window.innerWidth,
       height: window.innerHeight,
-      fragmentShader: fragShader,
+      fragmentShader: `#define MAX_SPHERES ${ptScene.spheres.length}
+       ${fragShader}`,
       uniforms: this.uniforms,
       resolutionScale: 1.0,
     });

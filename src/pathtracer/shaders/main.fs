@@ -1,3 +1,7 @@
+#ifndef MAX_SPHERES
+#define MAX_SPHERES 1
+#endif
+
 precision highp float;
 
 #define PI 3.141592653
@@ -69,10 +73,8 @@ bool intervalSurrounds(Interval i, float x) {
     return i.min < x && x < i.max;
 }
 
-#define MAX_SPHERES 4
 struct World {
     Sphere spheres[MAX_SPHERES];
-    int numSpheres;
 };
 
 uniform Material uMaterials[MAX_SPHERES];
@@ -119,7 +121,7 @@ bool hitWorld(World world, Ray ray, Interval rayInt, out Hit hit) {
     bool hitAnything = false;
     float closestSoFar = rayInt.max;
 
-    for (int i = 0; i < world.numSpheres; i++) {
+    for (int i = 0; i < MAX_SPHERES; i++) {
         Sphere sphere = world.spheres[i];
 
         if (hitSphere(sphere, ray, Interval(rayInt.min, closestSoFar), tempHit)) {
