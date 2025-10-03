@@ -15,23 +15,30 @@ import {
 
 export default class PtRenderer {
   public scene: THREE.Scene; // TODO : make private
-  private camera: THREE.PerspectiveCamera;
+  public dirLight: THREE.DirectionalLight;
+  public camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private clock: THREE.Clock;
 
-  private shaderDemo: ShaderCanvas;
+  public shaderDemo: ShaderCanvas;
 
   private renderTarget: THREE.WebGLRenderTarget;
   private composer: EffectComposer;
+  public rtPass: RenderPass;
+  public renderPass: RenderPass;
+  public outlinePass: OutlinePass;
 
-  private controls: OrbitControls | undefined;
-  private transformControls: TransformControls;
+  public controls: OrbitControls;
+  public transformControls: TransformControls;
 
   private gizmo: THREE.Object3D;
   private gizmoScene: THREE.Scene;
 
-  private settings: any;
-  private uniforms: any;
+  public spheres: any[]; // TODO remove this
+  public materials: any[]; // TODO remove this
+
+  public settings: any;
+  public uniforms: any;
 
   private backgroundColorTop: THREE.Color;
   private backgroundColorBottom: THREE.Color;
@@ -42,6 +49,9 @@ export default class PtRenderer {
   private worldUp: THREE.Vector3;
 
   constructor(canvas: HTMLCanvasElement, spheres: any[], materials: any[]) {
+    this.spheres = spheres;
+    this.materials = materials;
+
     this.backgroundColorTop = new THREE.Color(0.5, 0.7, 1); // Sky blue background
     this.backgroundColorBottom = new THREE.Color(1, 1, 1); // White ground
 
@@ -70,6 +80,9 @@ export default class PtRenderer {
     });
     this.scene = scene;
     this.scene.background = this.backgroundColorTop;
+    this.dirLight = new THREE.DirectionalLight(this.backgroundColorTop, 1.0);
+    this.scene.add(this.dirLight);
+
     this.renderer = renderer;
     this.renderer.autoClear = false;
     this.controls = controls;
@@ -133,6 +146,16 @@ export default class PtRenderer {
       }
     );
     this.composer = new EffectComposer(this.renderer, this.renderTarget);
+    this.renderPass = new RenderPass(this.scene, this.camera);
+    this.rtPass = new RenderPass(
+      this.shaderDemo.screenScene,
+      this.shaderDemo.screenCamera
+    );
+    this.outlinePass = new OutlinePass(
+      new THREE.Vector2(window.innerWidth * 2, window.innerHeight * 2),
+      this.scene,
+      this.camera
+    );
     this.setupComposer();
 
     // Setup Transform Controls
@@ -140,7 +163,6 @@ export default class PtRenderer {
       this.camera,
       this.renderer.domElement
     );
-    this.setupTransformControls();
 
     // Set Render Loop
     this.gizmo = this.transformControls.getHelper();
@@ -155,54 +177,17 @@ export default class PtRenderer {
     this.composer.setSize(window.innerWidth, window.innerHeight);
     this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    window.addEventListener("resize", () => {
-      this.composer.setSize(window.innerWidth, window.innerHeight);
-      this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    });
-
-    const renderPass = new RenderPass(this.scene, this.camera);
-    renderPass.enabled = !this.settings.raytracingEnabled;
-    this.composer.addPass(renderPass);
+    this.renderPass.enabled = !this.settings.raytracingEnabled;
+    this.composer.addPass(this.renderPass);
     this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-    const rtPass = new RenderPass(
-      this.shaderDemo.screenScene,
-      this.shaderDemo.screenCamera
-    );
-    this.composer.addPass(rtPass);
-    rtPass.enabled = this.settings.raytracingEnabled;
 
-    const outlinePass = new OutlinePass(
-      new THREE.Vector2(window.innerWidth * 2, window.innerHeight * 2),
-      this.scene,
-      this.camera
-    );
-    this.composer.addPass(outlinePass);
+    this.composer.addPass(this.rtPass);
+    this.rtPass.enabled = this.settings.raytracingEnabled;
+
+    this.composer.addPass(this.outlinePass);
 
     const gammaCorrectionPass = new ShaderPass(GammaCorrectionShader);
     this.composer.addPass(gammaCorrectionPass);
-  }
-
-  // To Do
-  private setupTransformControls() {
-    // transformControls.addEventListener("dragging-changed", function (event) {
-    //   this.controls.enabled = !event.value;
-    // });
-    // transformControls.mode = "translate";
-    // transformControls.addEventListener("change", () => {
-    //   if (transformControls.mode === "scale") {
-    //     const scale = selectedObject.scale.x;
-    //     selectedObject.scale.set(scale, scale, scale);
-    //     spheres[selectedObject.index].radius =
-    //       scale * selectedObject.geometry.parameters.radius;
-    //     settings.selectedRadius = spheres[selectedObject.index].radius;
-    //     selectedRadiusGUI.updateDisplay();
-    //   } else {
-    //     settings.selectedPosition.copy(selectedObject.position);
-    //     selectedPositionXGUI.updateDisplay();
-    //     selectedPositionYGUI.updateDisplay();
-    //     selectedPositionZGUI.updateDisplay();
-    //   }
-    // });
   }
 
   private renderLoop() {
@@ -235,7 +220,6 @@ export default class PtRenderer {
   }
 
   private attachEventListeners() {
-    // // handle resize
     window.addEventListener("resize", () => {
       const verticalFov = THREE.MathUtils.degToRad(this.camera.fov);
       const halfHeight = Math.tan(verticalFov / 2);

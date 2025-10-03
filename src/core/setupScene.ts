@@ -4,7 +4,6 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 export function setupScene({
   canvas,
   camera,
-  enableOrbitControls = true,
   clearColor = 0x202020,
 }: {
   canvas: HTMLCanvasElement;
@@ -14,15 +13,12 @@ export function setupScene({
 }): {
   scene: THREE.Scene;
   renderer: THREE.WebGLRenderer;
-  controls?: OrbitControls;
+  controls: OrbitControls;
 } {
   const scene = new THREE.Scene();
 
-  let controls: OrbitControls | undefined = undefined;
-  if (enableOrbitControls) {
-    controls = new OrbitControls(camera, canvas);
-    controls.enableDamping = true;
-  }
+  let controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true;
 
   const renderer = new THREE.WebGLRenderer({
     canvas: canvas,
