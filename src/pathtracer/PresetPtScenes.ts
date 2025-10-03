@@ -15,7 +15,7 @@ export default class PresetPtScenes {
       new PtMaterial(0, new THREE.Color(0.8, 0.8, 0)), // Ground - Lambert
       new PtMaterial(0, new THREE.Color(0.1, 0.2, 0.5)), // Center - Lambert
       new PtMaterial(2, new THREE.Color(1, 1, 1), 0, 1 / 1.33), // Left - Dielectric
-      new PtMaterial(1, new THREE.Color(0.8, 0.6, 0.2), 1.0), // Right - Metal
+      new PtMaterial(1, new THREE.Color(0.8, 0.6, 0.2), 0.1), // Right - Metal
     ];
 
     return new PtScene(spheres, materials);

@@ -18,7 +18,12 @@ export default class PtScene {
     this.backgroundColorTop = new THREE.Color(0.5, 0.7, 1); // Sky blue background
     this.backgroundColorBottom = new THREE.Color(1, 1, 1); // White ground
     this.scene.background = this.backgroundColorTop;
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    this.scene.add(ambientLight);
+
     this.dirLight = new THREE.DirectionalLight(this.backgroundColorTop, 1.0);
+    this.dirLight.position.set(0, 5, 0);
     this.scene.add(this.dirLight);
 
     this.intersectGroup = new THREE.Group();

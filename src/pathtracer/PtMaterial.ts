@@ -1,20 +1,16 @@
 import * as THREE from "three";
 
-export default class PtMaterial {
-  type: number; // 0 = lambert, 1 = metal, 2 = dielectric
-  albedo: THREE.Color;
-  fuzz: number; // For metal
-  ior: number; // For dielectric
+export enum PtMaterialType {
+  Lambert = 0,
+  Metal = 1,
+  Dielectric = 2,
+}
 
+export default class PtMaterial {
   constructor(
-    type: number,
-    albedo: THREE.Color,
-    fuzz: number = 0,
-    ior: number = 0
-  ) {
-    this.type = type;
-    this.albedo = albedo;
-    this.fuzz = fuzz;
-    this.ior = ior;
-  }
+    public type: PtMaterialType,
+    public albedo: THREE.Color,
+    public fuzz: number = 0,
+    public ior: number = 0
+  ) {}
 }
