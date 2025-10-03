@@ -86,9 +86,6 @@ export default class PtRenderer {
     const halfHeight = Math.tan(verticalFov / 2);
     const halfWidth = halfHeight * this.camera.aspect;
 
-    console.log(this.ptScene.spheres);
-    console.log(this.ptScene.materials);
-
     this.uniforms = {
       uCamera: {
         value: {
