@@ -231,7 +231,7 @@ float reflectance(float cosine, float ior) {
     return r0 + (1. - r0) * pow((1. - cosine), 5.);
 }
 
-vec3 scatterDialectric(Ray rayIn, Hit hit, vec2 seed) {
+vec3 scatterDielectric(Ray rayIn, Hit hit, vec2 seed) {
     float ior = hit.frontFace ? 1.0 / uMaterials[hit.materialId].ior : uMaterials[hit.materialId].ior;
     vec3 unitDir = normalize(rayIn.direction);
 
@@ -257,7 +257,7 @@ vec3 scatter(Ray rayIn, Hit hit, vec2 seed) {
         float fuzz = uMaterials[hit.materialId].fuzz;
         return scatterMetal(rayIn, hit, seed, fuzz);
     } else if (uMaterials[hit.materialId].type == 2) { // dielectric
-        return scatterDialectric(rayIn, hit, seed);
+        return scatterDielectric(rayIn, hit, seed);
     }
 
     return vec3(0);

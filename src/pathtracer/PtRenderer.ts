@@ -11,10 +11,10 @@ import {
   TransformControls,
   OrbitControls,
 } from "three/examples/jsm/Addons.js";
+import PtScene from "./PtScene";
 
 export default class PtRenderer {
-  public scene: THREE.Scene; // TODO : make private
-  public dirLight: THREE.DirectionalLight;
+  public ptScene: PtScene;
   public camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private clock: THREE.Clock;
@@ -33,26 +33,16 @@ export default class PtRenderer {
   private gizmo: THREE.Object3D;
   private gizmoScene: THREE.Scene;
 
-  public spheres: any[]; // TODO remove this
-  public materials: any[]; // TODO remove this
-
   public settings: any;
   public uniforms: any;
-
-  private backgroundColorTop: THREE.Color;
-  private backgroundColorBottom: THREE.Color;
 
   private cameraForward: THREE.Vector3;
   private cameraUp: THREE.Vector3;
   private cameraRight: THREE.Vector3;
   private worldUp: THREE.Vector3;
 
-  constructor(canvas: HTMLCanvasElement, spheres: any[], materials: any[]) {
-    this.spheres = spheres;
-    this.materials = materials;
-
-    this.backgroundColorTop = new THREE.Color(0.5, 0.7, 1); // Sky blue background
-    this.backgroundColorBottom = new THREE.Color(1, 1, 1); // White ground
+  constructor(canvas: HTMLCanvasElement, ptScene: PtScene) {
+    this.ptScene = ptScene;
 
     this.settings = {
       raytracingEnabled: true,
@@ -60,8 +50,8 @@ export default class PtRenderer {
       selectedRadius: 0,
       selectedColor: "#000000",
       selectedFuzz: 0,
-      backgroundColorTop: this.backgroundColorTop,
-      backgroundColorBottom: this.backgroundColorBottom,
+      backgroundColorTop: this.ptScene.backgroundColorTop,
+      backgroundColorBottom: this.ptScene.backgroundColorBottom,
       enableDepthOfField: false,
       aperture: 0.0,
       focusDistance: 1.0,
@@ -83,13 +73,6 @@ export default class PtRenderer {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.autoClear = false;
 
-    this.scene = new THREE.Scene();
-    this.scene.background = this.backgroundColorTop;
-    this.dirLight = new THREE.DirectionalLight(this.backgroundColorTop, 1.0);
-    this.scene.add(this.dirLight);
-
-    this.clock = new THREE.Clock();
-
     this.cameraForward = new THREE.Vector3();
     this.camera.getWorldDirection(this.cameraForward).normalize();
     this.cameraUp = this.camera.up.clone();
@@ -102,6 +85,9 @@ export default class PtRenderer {
     const verticalFov = THREE.MathUtils.degToRad(this.camera.fov);
     const halfHeight = Math.tan(verticalFov / 2);
     const halfWidth = halfHeight * this.camera.aspect;
+
+    console.log(this.ptScene.spheres);
+    console.log(this.ptScene.materials);
 
     this.uniforms = {
       uCamera: {
@@ -118,15 +104,15 @@ export default class PtRenderer {
       },
       uWorld: {
         value: {
-          spheres: spheres,
-          numSpheres: spheres.length,
+          spheres: this.ptScene.spheres,
+          numSpheres: this.ptScene.spheres.length,
         },
       },
       uNumSamples: { value: 10 },
       uMaxRayDepth: { value: 10 },
-      uMaterials: { value: materials },
-      uBackgroundColorTop: { value: this.backgroundColorTop },
-      uBackgroundColorBottom: { value: this.backgroundColorBottom },
+      uMaterials: { value: this.ptScene.materials },
+      uBackgroundColorTop: { value: this.ptScene.backgroundColorTop },
+      uBackgroundColorBottom: { value: this.ptScene.backgroundColorBottom },
       uEnableDoF: { value: this.settings.enableDepthOfField },
     };
 
@@ -147,14 +133,14 @@ export default class PtRenderer {
       }
     );
     this.composer = new EffectComposer(this.renderer, this.renderTarget);
-    this.renderPass = new RenderPass(this.scene, this.camera);
+    this.renderPass = new RenderPass(this.ptScene.scene, this.camera);
     this.rtPass = new RenderPass(
       this.shaderDemo.screenScene,
       this.shaderDemo.screenCamera
     );
     this.outlinePass = new OutlinePass(
       new THREE.Vector2(window.innerWidth * 2, window.innerHeight * 2),
-      this.scene,
+      this.ptScene.scene,
       this.camera
     );
     this.setupComposer();

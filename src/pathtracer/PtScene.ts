@@ -1,30 +1,19 @@
 import * as THREE from "three";
+import PtSphere from "./PtSphere";
+import PtMaterial from "./PtMaterial";
 
-interface PtMaterial {
-  type: number; // 0 = lambert, 1 = metal, 2 = dielectric
-  color: THREE.Color;
-  fuzz?: number; // For metal
-  ior?: number; // For dielectric
-}
-
-interface PtSphere {
-  position: THREE.Vector3;
-  radius: number;
-  materialId: number;
-}
-
-export class PtScene {
+export default class PtScene {
   scene: THREE.Scene;
   intersectGroup: THREE.Group;
   spheres: PtSphere[];
   materials: PtMaterial[];
 
   public dirLight: THREE.DirectionalLight;
-  private backgroundColorTop: THREE.Color;
-  private backgroundColorBottom: THREE.Color;
+  backgroundColorTop: THREE.Color;
+  backgroundColorBottom: THREE.Color;
 
-  constructor(scene: THREE.Scene) {
-    this.scene = scene;
+  constructor(spheres: PtSphere[], materials: PtMaterial[]) {
+    this.scene = new THREE.Scene();
 
     this.backgroundColorTop = new THREE.Color(0.5, 0.7, 1); // Sky blue background
     this.backgroundColorBottom = new THREE.Color(1, 1, 1); // White ground
@@ -33,59 +22,48 @@ export class PtScene {
     this.scene.add(this.dirLight);
 
     this.intersectGroup = new THREE.Group();
-    this.spheres = [];
-    this.materials = [];
 
-    for (const obj of scene.children) {
-      if (
-        obj instanceof THREE.Mesh &&
-        obj.geometry instanceof THREE.SphereGeometry
-      ) {
-        const sphere = obj as THREE.Mesh;
-        const geometry = sphere.geometry as THREE.SphereGeometry;
-        const position = new THREE.Vector3();
-        sphere.getWorldPosition(position);
-        const radius = geometry.parameters.radius;
+    this.spheres = spheres;
+    this.materials = materials;
 
-        this.intersectGroup.add(sphere);
+    const sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
 
-        obj.index = this.spheres.length; // Custom property to track index: TODO cleaner way
+    for (let i = 0; i < spheres.length; i++) {
+      const sphere = spheres[i];
+      const materialDef = materials[sphere.materialId];
 
-        this.spheres.push({
-          position: position,
-          radius: radius,
-          materialId: this.materials.length,
+      let material: THREE.Material;
+      if (materialDef.type === 0) {
+        material = new THREE.MeshLambertMaterial({
+          color: materialDef.albedo,
         });
-
-        const material = sphere.material;
-        if (material instanceof THREE.MeshLambertMaterial) {
-          this.materials.push({
-            type: 0,
-            color: material.color,
-          });
-        } else if (material instanceof THREE.MeshStandardMaterial) {
-          this.materials.push({
-            type: 1,
-            color: material.color,
-            fuzz: material.roughness,
-          });
-        } else if (material instanceof THREE.MeshPhysicalMaterial) {
-          this.materials.push({
-            type: 2,
-            color: material.color,
-            ior: material.ior,
-          });
-        } else {
-          console.warn(
-            "Unsupported material type in PtScene conversion:",
-            material
-          );
-          this.materials.push({
-            type: 0,
-            color: new THREE.Color(1, 0, 1), // Magenta for unsupported
-          });
-        }
+      } else if (materialDef.type === 1) {
+        material = new THREE.MeshStandardMaterial({
+          color: materialDef.albedo,
+          roughness: materialDef.fuzz,
+        });
+      } else if (materialDef.type === 2) {
+        material = new THREE.MeshPhysicalMaterial({
+          color: materialDef.albedo,
+          metalness: 0,
+          roughness: 0,
+          ior: materialDef.ior,
+          transmission: 1,
+          opacity: 1,
+          transparent: true,
+        });
+      } else {
+        console.warn(
+          `Unknown material type ${materialDef.type} for sphere ${i}`
+        );
+        material = new THREE.MeshBasicMaterial({ color: 0xff00ff });
       }
+
+      const sphereMesh = new THREE.Mesh(sphereGeometry, material);
+      sphereMesh.position.copy(sphere.position);
+      sphereMesh.scale.set(sphere.radius, sphere.radius, sphere.radius);
+
+      this.intersectGroup.add(sphereMesh);
     }
 
     this.intersectGroup.updateMatrixWorld();
