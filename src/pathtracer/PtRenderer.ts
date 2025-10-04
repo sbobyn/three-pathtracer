@@ -21,11 +21,11 @@ export default class PtRenderer {
   private renderer: THREE.WebGLRenderer;
   private clock: THREE.Clock;
 
-  public shaderDemo: ShaderCanvas;
+  public ptCanvas: ShaderCanvas;
 
   private renderTarget: THREE.WebGLRenderTarget;
   private composer: EffectComposer;
-  public rtPass: RenderPass;
+  public ptPass: RenderPass;
   public renderPass: RenderPass;
   public outlinePass: OutlinePass;
 
@@ -49,7 +49,7 @@ export default class PtRenderer {
     this.ptScene = ptScene;
 
     this.settings = {
-      raytracingEnabled: true,
+      pathtracingEnabled: true,
       selectedPosition: new THREE.Vector3(),
       selectedRadius: 0,
       selectedColor: "#000000",
@@ -123,7 +123,7 @@ export default class PtRenderer {
       uEnableDoF: { value: this.settings.enableDepthOfField },
     };
 
-    this.shaderDemo = new ShaderCanvas({
+    this.ptCanvas = new ShaderCanvas({
       width: window.innerWidth,
       height: window.innerHeight,
       fragmentShader: `#define MAX_SPHERES ${ptScene.spheres.length}
@@ -142,9 +142,9 @@ export default class PtRenderer {
     );
     this.composer = new EffectComposer(this.renderer, this.renderTarget);
     this.renderPass = new RenderPass(this.ptScene.scene, this.camera);
-    this.rtPass = new RenderPass(
-      this.shaderDemo.screenScene,
-      this.shaderDemo.screenCamera
+    this.ptPass = new RenderPass(
+      this.ptCanvas.screenScene,
+      this.ptCanvas.screenCamera
     );
     this.outlinePass = new OutlinePass(
       new THREE.Vector2(window.innerWidth * 2, window.innerHeight * 2),
@@ -181,7 +181,7 @@ export default class PtRenderer {
     this.uniforms.uBackgroundColorTop.value = this.ptScene.backgroundColorTop;
     this.uniforms.uBackgroundColorBottom.value =
       this.ptScene.backgroundColorBottom;
-    this.shaderDemo.material.fragmentShader = `#define MAX_SPHERES ${ptScene.spheres.length}
+    this.ptCanvas.material.fragmentShader = `#define MAX_SPHERES ${ptScene.spheres.length}
        ${fragShader}`;
 
     this.outlinePass.selectedObjects = [];
@@ -189,20 +189,20 @@ export default class PtRenderer {
 
     this.transformControls.detach();
 
-    this.shaderDemo.resetAccumulation();
-    this.shaderDemo.material.needsUpdate = true;
+    this.ptCanvas.resetAccumulation();
+    this.ptCanvas.material.needsUpdate = true;
   }
 
   private setupComposer() {
     this.composer.setSize(window.innerWidth, window.innerHeight);
     this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    this.renderPass.enabled = !this.settings.raytracingEnabled;
+    this.renderPass.enabled = !this.settings.pathtracingEnabled;
     this.composer.addPass(this.renderPass);
     this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 
-    this.composer.addPass(this.rtPass);
-    this.rtPass.enabled = this.settings.raytracingEnabled;
+    this.composer.addPass(this.ptPass);
+    this.ptPass.enabled = this.settings.pathtracingEnabled;
 
     this.composer.addPass(this.outlinePass);
 
@@ -216,7 +216,7 @@ export default class PtRenderer {
 
     this.orbitControls?.update();
 
-    if (this.settings.raytracingEnabled) {
+    if (this.settings.pathtracingEnabled) {
       this.camera.updateMatrixWorld();
       this.camera.updateProjectionMatrix();
 
@@ -227,7 +227,7 @@ export default class PtRenderer {
       this.cameraUp
         .crossVectors(this.cameraRight, this.cameraForward)
         .normalize();
-      this.shaderDemo.render(this.renderer);
+      this.ptCanvas.render(this.renderer);
     }
 
     // transform controls
@@ -247,7 +247,7 @@ export default class PtRenderer {
       this.uniforms.uCamera.value.halfHeight = halfHeight;
       this.uniforms.uCamera.value.halfWidth = halfWidth;
 
-      this.shaderDemo.setDimensions(window.innerWidth, window.innerHeight);
+      this.ptCanvas.setDimensions(window.innerWidth, window.innerHeight);
     });
 
     window.addEventListener("resize", () => {
@@ -256,11 +256,11 @@ export default class PtRenderer {
     });
 
     this.orbitControls.addEventListener("change", () => {
-      this.shaderDemo.resetAccumulation();
+      this.ptCanvas.resetAccumulation();
     });
 
     this.transformControls.addEventListener("change", () => {
-      if (this.transformControls.dragging) this.shaderDemo.resetAccumulation();
+      if (this.transformControls.dragging) this.ptCanvas.resetAccumulation();
     });
 
     window.addEventListener("resize", () => {

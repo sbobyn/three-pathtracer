@@ -75,7 +75,6 @@ export class ShaderCanvas {
     );
     this.pongRenderTarget = this.pingRenderTarget.clone();
 
-    // Create a fullscreen quad in your main scene to show the raytracer output
     this.screenMaterial = new THREE.MeshBasicMaterial({
       map: this.pongRenderTarget.texture,
     });
