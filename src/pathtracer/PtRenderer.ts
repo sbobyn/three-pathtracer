@@ -21,7 +21,7 @@ export default class PtRenderer {
   private renderer: THREE.WebGLRenderer;
   private clock: THREE.Clock;
 
-  public ptCanvas: ShaderCanvas;
+  public shaderCanvas: ShaderCanvas;
 
   private renderTarget: THREE.WebGLRenderTarget;
   private composer: EffectComposer;
@@ -123,7 +123,7 @@ export default class PtRenderer {
       uEnableDoF: { value: this.settings.enableDepthOfField },
     };
 
-    this.ptCanvas = new ShaderCanvas({
+    this.shaderCanvas = new ShaderCanvas({
       width: window.innerWidth,
       height: window.innerHeight,
       fragmentShader: `#define MAX_SPHERES ${ptScene.spheres.length}
@@ -143,8 +143,8 @@ export default class PtRenderer {
     this.composer = new EffectComposer(this.renderer, this.renderTarget);
     this.renderPass = new RenderPass(this.ptScene.scene, this.camera);
     this.ptPass = new RenderPass(
-      this.ptCanvas.screenScene,
-      this.ptCanvas.screenCamera
+      this.shaderCanvas.screenScene,
+      this.shaderCanvas.screenCamera
     );
     this.outlinePass = new OutlinePass(
       new THREE.Vector2(window.innerWidth * 2, window.innerHeight * 2),
@@ -181,7 +181,7 @@ export default class PtRenderer {
     this.uniforms.uBackgroundColorTop.value = this.ptScene.backgroundColorTop;
     this.uniforms.uBackgroundColorBottom.value =
       this.ptScene.backgroundColorBottom;
-    this.ptCanvas.material.fragmentShader = `#define MAX_SPHERES ${ptScene.spheres.length}
+    this.shaderCanvas.material.fragmentShader = `#define MAX_SPHERES ${ptScene.spheres.length}
        ${fragShader}`;
 
     this.outlinePass.selectedObjects = [];
@@ -189,8 +189,8 @@ export default class PtRenderer {
 
     this.transformControls.detach();
 
-    this.ptCanvas.resetAccumulation();
-    this.ptCanvas.material.needsUpdate = true;
+    this.shaderCanvas.resetAccumulation();
+    this.shaderCanvas.material.needsUpdate = true;
   }
 
   private setupComposer() {
@@ -227,7 +227,7 @@ export default class PtRenderer {
       this.cameraUp
         .crossVectors(this.cameraRight, this.cameraForward)
         .normalize();
-      this.ptCanvas.render(this.renderer);
+      this.shaderCanvas.render(this.renderer);
     }
 
     // transform controls
@@ -247,7 +247,7 @@ export default class PtRenderer {
       this.uniforms.uCamera.value.halfHeight = halfHeight;
       this.uniforms.uCamera.value.halfWidth = halfWidth;
 
-      this.ptCanvas.setDimensions(window.innerWidth, window.innerHeight);
+      this.shaderCanvas.setDimensions(window.innerWidth, window.innerHeight);
     });
 
     window.addEventListener("resize", () => {
@@ -256,11 +256,12 @@ export default class PtRenderer {
     });
 
     this.orbitControls.addEventListener("change", () => {
-      this.ptCanvas.resetAccumulation();
+      this.shaderCanvas.resetAccumulation();
     });
 
     this.transformControls.addEventListener("change", () => {
-      if (this.transformControls.dragging) this.ptCanvas.resetAccumulation();
+      if (this.transformControls.dragging)
+        this.shaderCanvas.resetAccumulation();
     });
 
     window.addEventListener("resize", () => {

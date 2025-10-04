@@ -48,13 +48,13 @@ export default class PtGui {
 
         // swap in renderer
         ptRenderer.setScene(newScene);
-        ptRenderer.ptCanvas.resetAccumulation();
+        ptRenderer.shaderCanvas.resetAccumulation();
       });
 
     const raytracingToggleGUI = this.gui
       .add(ptRenderer.settings, "pathtracingEnabled")
       .onChange(() => {
-        ptRenderer.ptCanvas.resetAccumulation();
+        ptRenderer.shaderCanvas.resetAccumulation();
       });
     this.backgroundColorTopGUI = this.gui
       .addColor(ptRenderer.settings, "backgroundColorTop")
@@ -62,7 +62,7 @@ export default class PtGui {
         const color = new THREE.Color(value);
         ptScene.scene.background = color;
         ptScene.dirLight.color = color;
-        ptRenderer.ptCanvas.resetAccumulation();
+        ptRenderer.shaderCanvas.resetAccumulation();
       });
 
     this.backgroundColorBottomGUI = this.gui
@@ -70,7 +70,7 @@ export default class PtGui {
       .onChange((value: string | number | THREE.Color) => {
         const color = new THREE.Color(value);
         ptRenderer.uniforms.uBackgroundColorBottom.value = color;
-        ptRenderer.ptCanvas.resetAccumulation();
+        ptRenderer.shaderCanvas.resetAccumulation();
       });
 
     this.gui.add(ptRenderer.camera, "fov", 10, 120, 1).onChange(() => {
@@ -80,7 +80,7 @@ export default class PtGui {
       );
       ptRenderer.uniforms.uCamera.value.halfWidth =
         ptRenderer.uniforms.uCamera.value.halfHeight * ptRenderer.camera.aspect;
-      ptRenderer.ptCanvas.resetAccumulation();
+      ptRenderer.shaderCanvas.resetAccumulation();
     });
 
     const raytracingSettingsFolder = this.gui.addFolder("Raytracing Settings");
@@ -91,25 +91,25 @@ export default class PtGui {
     raytracingSettingsFolder
       .add(ptRenderer.uniforms.uNumSamples, "value", 1, 20, 1)
       .onChange(() => {
-        ptRenderer.ptCanvas.resetAccumulation();
+        ptRenderer.shaderCanvas.resetAccumulation();
       })
       .name("Samples");
 
     raytracingSettingsFolder
       .add(ptRenderer.uniforms.uMaxRayDepth, "value", 1, 20, 1)
       .onChange(() => {
-        ptRenderer.ptCanvas.resetAccumulation();
+        ptRenderer.shaderCanvas.resetAccumulation();
       })
       .name("Max Ray Depth");
 
     raytracingSettingsFolder
       .add(
-        ptRenderer.ptCanvas,
+        ptRenderer.shaderCanvas,
         "resolutionScale",
         [2.0, 1.0, 0.5, 0.25, 0.125, 0.0625]
       )
       .onChange((value: number) => {
-        ptRenderer.ptCanvas.updateRenderTarget();
+        ptRenderer.shaderCanvas.updateRenderTarget();
       });
 
     raytracingToggleGUI.onChange((value: boolean) => {
@@ -130,14 +130,14 @@ export default class PtGui {
       .add(ptRenderer.settings, "aperture", 0, 0.1, 0.001)
       .onChange((value: number) => {
         ptRenderer.uniforms.uCamera.value.aperture = value;
-        ptRenderer.ptCanvas.resetAccumulation();
+        ptRenderer.shaderCanvas.resetAccumulation();
       });
     if (!ptRenderer.settings.enableDepthOfField) apertureGUI.disable();
     const focusDistGUI = raytracingSettingsFolder
       .add(ptRenderer.settings, "focusDistance", 0.1, 10, 0.1)
       .onChange((value: number) => {
         ptRenderer.uniforms.uCamera.value.focusDistance = value;
-        ptRenderer.ptCanvas.resetAccumulation();
+        ptRenderer.shaderCanvas.resetAccumulation();
       });
     if (!ptRenderer.settings.enableDepthOfField) focusDistGUI.disable();
     toggleDoFGUI.onChange((value: boolean) => {
@@ -149,7 +149,7 @@ export default class PtGui {
         apertureGUI.disable();
         focusDistGUI.disable();
       }
-      ptRenderer.ptCanvas.resetAccumulation();
+      ptRenderer.shaderCanvas.resetAccumulation();
     });
 
     this.selctedObjectFolder = this.gui.addFolder("Selected Object");
@@ -285,7 +285,7 @@ export default class PtGui {
     this.materialFolder.addColor(material, "color").onChange(() => {
       material.needsUpdate = true;
       ptScene.materials[materialId].albedo = material.color;
-      ptRenderer.ptCanvas.resetAccumulation();
+      ptRenderer.shaderCanvas.resetAccumulation();
     });
 
     if (materialType === "Metal") {
@@ -293,7 +293,7 @@ export default class PtGui {
         this.materialFolder.add(material, "roughness", 0, 1).onChange(() => {
           material.needsUpdate = true;
           ptScene.materials[materialId].fuzz = material.roughness;
-          ptRenderer.ptCanvas.resetAccumulation();
+          ptRenderer.shaderCanvas.resetAccumulation();
         });
       }
     }
@@ -303,7 +303,7 @@ export default class PtGui {
         this.materialFolder.add(material, "ior", 0, 2.5).onChange(() => {
           material.needsUpdate = true;
           ptScene.materials[materialId].ior = material.ior;
-          ptRenderer.ptCanvas.resetAccumulation();
+          ptRenderer.shaderCanvas.resetAccumulation();
         });
       }
     }
