@@ -29,7 +29,7 @@ export default class PtRenderer {
   public renderPass: RenderPass;
   public outlinePass: OutlinePass;
 
-  public controls: OrbitControls;
+  public orbitControls: OrbitControls;
   public transformControls: TransformControls;
 
   private gizmo: THREE.Object3D;
@@ -74,8 +74,8 @@ export default class PtRenderer {
     });
     this.camera.fov = 20;
 
-    this.controls = new OrbitControls(this.camera, canvas);
-    this.controls.enableDamping = true;
+    this.orbitControls = new OrbitControls(this.camera, canvas);
+    this.orbitControls.enableDamping = true;
 
     this.renderer = new THREE.WebGLRenderer({
       canvas: canvas,
@@ -214,7 +214,7 @@ export default class PtRenderer {
     this.stats.begin();
     this.renderer.clear();
 
-    this.controls?.update();
+    this.orbitControls?.update();
 
     if (this.settings.raytracingEnabled) {
       this.camera.updateMatrixWorld();
@@ -255,7 +255,7 @@ export default class PtRenderer {
       this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     });
 
-    this.controls.addEventListener("change", () => {
+    this.orbitControls.addEventListener("change", () => {
       this.shaderDemo.resetAccumulation();
     });
 

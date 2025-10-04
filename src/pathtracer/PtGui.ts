@@ -210,7 +210,7 @@ export default class PtGui {
     ptRenderer.transformControls.addEventListener(
       "dragging-changed",
       function (event) {
-        ptRenderer.controls.enabled = !event.value;
+        ptRenderer.orbitControls.enabled = !event.value;
       }
     );
     ptRenderer.transformControls.mode = "translate";
