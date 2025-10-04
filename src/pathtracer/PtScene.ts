@@ -12,7 +12,15 @@ export default class PtScene {
   backgroundColorTop: THREE.Color;
   backgroundColorBottom: THREE.Color;
 
-  constructor(spheres: PtSphere[], materials: PtMaterial[]) {
+  public camera: THREE.PerspectiveCamera;
+
+  constructor(
+    spheres: PtSphere[],
+    materials: PtMaterial[],
+    camera: THREE.PerspectiveCamera
+  ) {
+    this.camera = camera;
+
     this.scene = new THREE.Scene();
 
     this.backgroundColorTop = new THREE.Color(0.5, 0.7, 1); // Sky blue background

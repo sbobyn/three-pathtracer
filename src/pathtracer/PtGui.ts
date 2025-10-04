@@ -24,11 +24,14 @@ export default class PtGui {
   private backgroundColorTopGUI: Controller;
   private backgroundColorBottomGUI: Controller;
 
+  private activePtScene: PtScene;
+
   constructor(ptRenderer: PtRenderer, ptScene: PtScene) {
     this.selectedObject = null;
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
     this.intersectGroup = ptScene.intersectGroup;
+    this.activePtScene = ptScene;
 
     this.gui = new GUI({ title: "Settings" });
 
@@ -48,7 +51,7 @@ export default class PtGui {
 
         // swap in renderer
         ptRenderer.setScene(newScene);
-        ptRenderer.shaderCanvas.resetAccumulation();
+        this.activePtScene = newScene;
       });
 
     const raytracingToggleGUI = this.gui
@@ -60,8 +63,8 @@ export default class PtGui {
       .addColor(ptRenderer.settings, "backgroundColorTop")
       .onChange((value: string | number | THREE.Color) => {
         const color = new THREE.Color(value);
-        ptScene.scene.background = color;
-        ptScene.dirLight.color = color;
+        this.activePtScene.scene.background = color;
+        this.activePtScene.dirLight.color = color;
         ptRenderer.shaderCanvas.resetAccumulation();
       });
 
@@ -186,7 +189,7 @@ export default class PtGui {
       .add(ptRenderer.settings, "selectedRadius", 0)
       .onChange((value: number) => {
         if (this.selectedObject) {
-          ptScene.spheres[this.selectedObject.index].radius = value;
+          this.activePtScene.spheres[this.selectedObject.index].radius = value;
           const scale = value / this.selectedObject.geometry.parameters.radius;
           this.selectedObject.scale.set(scale, scale, scale);
         }
@@ -204,25 +207,19 @@ export default class PtGui {
 
       this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
       this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-      this.checkIntersection(ptRenderer, ptScene);
+      this.checkIntersection(ptRenderer);
     });
 
-    ptRenderer.transformControls.addEventListener(
-      "dragging-changed",
-      function (event) {
-        ptRenderer.orbitControls.enabled = !event.value;
-      }
-    );
     ptRenderer.transformControls.mode = "translate";
 
     ptRenderer.transformControls.addEventListener("change", () => {
       if (ptRenderer.transformControls.mode === "scale") {
         const scale = this.selectedObject.scale.x;
         this.selectedObject.scale.set(scale, scale, scale);
-        ptScene.spheres[this.selectedObject.index].radius =
+        this.activePtScene.spheres[this.selectedObject.index].radius =
           scale * this.selectedObject.geometry.parameters.radius;
         ptRenderer.settings.selectedRadius =
-          ptScene.spheres[this.selectedObject.index].radius;
+          this.activePtScene.spheres[this.selectedObject.index].radius;
         this.selectedRadiusGUI.updateDisplay();
       } else {
         ptRenderer.settings.selectedPosition.copy(this.selectedObject.position);
@@ -233,7 +230,7 @@ export default class PtGui {
     });
   }
 
-  checkIntersection(ptRenderer: PtRenderer, ptScene: PtScene) {
+  checkIntersection(ptRenderer: PtRenderer) {
     this.raycaster.setFromCamera(this.mouse, ptRenderer.camera);
 
     const intersects = this.raycaster.intersectObject(
@@ -250,17 +247,16 @@ export default class PtGui {
       // radius display must be manually updated
 
       ptRenderer.settings.selectedRadius =
-        ptScene.spheres[this.selectedObject.index].radius;
+        this.activePtScene.spheres[this.selectedObject.index].radius;
       this.selectedRadiusGUI.updateDisplay();
       ptRenderer.settings.selectedColor =
-        ptScene.materials[
-          ptScene.spheres[this.selectedObject.index].materialId
+        this.activePtScene.materials[
+          this.activePtScene.spheres[this.selectedObject.index].materialId
         ].albedo.getHexString();
       this.populateMaterialGUI(
         this.selectedObject.material,
-        ptScene.spheres[this.selectedObject.index].materialId,
-        ptRenderer,
-        ptScene
+        this.activePtScene.spheres[this.selectedObject.index].materialId,
+        ptRenderer
       );
     } else {
       ptRenderer.outlinePass.selectedObjects = [];
@@ -272,11 +268,11 @@ export default class PtGui {
   populateMaterialGUI(
     material: THREE.MeshStandardMaterial,
     materialId: number,
-    ptRenderer: PtRenderer,
-    ptScene: PtScene
+    ptRenderer: PtRenderer
   ) {
     this.materialFolder.destroy();
-    const materialType = materialLabelDict[ptScene.materials[materialId].type];
+    const materialType =
+      materialLabelDict[this.activePtScene.materials[materialId].type];
 
     this.materialFolder = this.selctedObjectFolder.addFolder(
       `Material - ${materialId} - ${materialType}`
@@ -284,7 +280,7 @@ export default class PtGui {
 
     this.materialFolder.addColor(material, "color").onChange(() => {
       material.needsUpdate = true;
-      ptScene.materials[materialId].albedo = material.color;
+      this.activePtScene.materials[materialId].albedo = material.color;
       ptRenderer.shaderCanvas.resetAccumulation();
     });
 
@@ -292,7 +288,7 @@ export default class PtGui {
       if ("roughness" in material) {
         this.materialFolder.add(material, "roughness", 0, 1).onChange(() => {
           material.needsUpdate = true;
-          ptScene.materials[materialId].fuzz = material.roughness;
+          this.activePtScene.materials[materialId].fuzz = material.roughness;
           ptRenderer.shaderCanvas.resetAccumulation();
         });
       }
@@ -302,7 +298,7 @@ export default class PtGui {
       if ("ior" in material) {
         this.materialFolder.add(material, "ior", 0, 2.5).onChange(() => {
           material.needsUpdate = true;
-          ptScene.materials[materialId].ior = material.ior;
+          this.activePtScene.materials[materialId].ior = material.ior;
           ptRenderer.shaderCanvas.resetAccumulation();
         });
       }

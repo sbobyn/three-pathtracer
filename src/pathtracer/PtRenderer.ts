@@ -45,9 +45,86 @@ export default class PtRenderer {
 
   private stats: Stats;
 
-  constructor(canvas: HTMLCanvasElement, ptScene: PtScene) {
-    this.ptScene = ptScene;
+  private canvas: HTMLCanvasElement;
 
+  constructor(canvas: HTMLCanvasElement, ptScene: PtScene) {
+    this.canvas = canvas;
+    this.ptScene = ptScene;
+    this.camera = ptScene.camera;
+
+    this.setupSettings();
+
+    this.setupRenderer();
+    this.setupControls();
+    this.setupCamera();
+    this.setUniforms();
+    this.setupShaderCanvas();
+
+    // Setup Post Processing / Composer Passes
+    this.renderTarget = new THREE.WebGLRenderTarget(
+      0,
+      0, // will be set by composer.setSize later
+      {
+        samples: window.devicePixelRatio === 1 ? 2 : 0,
+      }
+    );
+    this.composer = new EffectComposer(this.renderer, this.renderTarget);
+    this.setupComposer();
+
+    this.setupGizmo();
+
+    // Set Render Loop
+
+    this.clock = new THREE.Clock();
+    this.stats = setupStats();
+    this.renderer.setAnimationLoop(this.renderLoop.bind(this));
+
+    // Event listeners
+    this.attachEventListeners();
+  }
+
+  setupRenderer() {
+    this.renderer = new THREE.WebGLRenderer({
+      canvas: this.canvas,
+    });
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.autoClear = false;
+  }
+
+  setScene(ptScene: PtScene) {
+    this.ptScene = ptScene;
+    this.camera = ptScene.camera;
+    this.reset();
+  }
+
+  reset() {
+    this.setupSettings();
+    this.setupControls();
+    this.setupCamera();
+    this.setUniforms();
+    this.setupShaderCanvas();
+
+    this.setupComposer();
+    this.outlinePass.selectedObjects = [];
+    this.outlinePass.renderScene = this.ptScene.scene;
+
+    this.setupGizmo();
+    this.attachEventListeners();
+  }
+
+  setupShaderCanvas() {
+    this.shaderCanvas = new ShaderCanvas({
+      width: window.innerWidth,
+      height: window.innerHeight,
+      fragmentShader: `#define MAX_SPHERES ${this.ptScene.spheres.length}
+       ${fragShader}`,
+      uniforms: this.uniforms,
+      resolutionScale: 1.0,
+    });
+  }
+
+  private setupSettings() {
     this.settings = {
       pathtracingEnabled: true,
       selectedPosition: new THREE.Vector3(),
@@ -60,30 +137,19 @@ export default class PtRenderer {
       aperture: 0.0,
       focusDistance: 1.0,
     };
+  }
 
-    // this.camera = createFullScreenPerspectiveCamera({
-    //   position: new THREE.Vector3(0, 0.5, 2),
-    //   lookAt: new THREE.Vector3(0, 0.5, 0),
-    //   far: 10000,
-    // });
-
-    this.camera = createFullScreenPerspectiveCamera({
-      position: new THREE.Vector3(13, 2, 3),
-      lookAt: new THREE.Vector3(0, 0, 0),
-      far: 10000,
-    });
-    this.camera.fov = 20;
-
-    this.orbitControls = new OrbitControls(this.camera, canvas);
+  private setupControls() {
+    this.orbitControls = new OrbitControls(this.camera, this.canvas);
     this.orbitControls.enableDamping = true;
 
-    this.renderer = new THREE.WebGLRenderer({
-      canvas: canvas,
-    });
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.autoClear = false;
+    this.transformControls = new TransformControls(
+      this.camera,
+      this.renderer.domElement
+    );
+  }
 
+  private setupCamera() {
     this.cameraForward = new THREE.Vector3();
     this.camera.getWorldDirection(this.cameraForward).normalize();
     this.cameraUp = this.camera.up.clone();
@@ -92,7 +158,9 @@ export default class PtRenderer {
       .crossVectors(this.cameraForward, this.cameraUp)
       .normalize();
     this.worldUp = new THREE.Vector3(0, 1, 0);
+  }
 
+  private setUniforms() {
     const verticalFov = THREE.MathUtils.degToRad(this.camera.fov);
     const halfHeight = Math.tan(verticalFov / 2);
     const halfWidth = halfHeight * this.camera.aspect;
@@ -122,25 +190,9 @@ export default class PtRenderer {
       uBackgroundColorBottom: { value: this.ptScene.backgroundColorBottom },
       uEnableDoF: { value: this.settings.enableDepthOfField },
     };
+  }
 
-    this.shaderCanvas = new ShaderCanvas({
-      width: window.innerWidth,
-      height: window.innerHeight,
-      fragmentShader: `#define MAX_SPHERES ${ptScene.spheres.length}
-       ${fragShader}`,
-      uniforms: this.uniforms,
-      resolutionScale: 1.0,
-    });
-
-    // Setup Post Processing / Composer Passes
-    this.renderTarget = new THREE.WebGLRenderTarget(
-      0,
-      0, // will be set by composer.setSize later
-      {
-        samples: window.devicePixelRatio === 1 ? 2 : 0,
-      }
-    );
-    this.composer = new EffectComposer(this.renderer, this.renderTarget);
+  private setupComposer() {
     this.renderPass = new RenderPass(this.ptScene.scene, this.camera);
     this.ptPass = new RenderPass(
       this.shaderCanvas.screenScene,
@@ -151,49 +203,7 @@ export default class PtRenderer {
       this.ptScene.scene,
       this.camera
     );
-    this.setupComposer();
 
-    // Setup Transform Controls
-    this.transformControls = new TransformControls(
-      this.camera,
-      this.renderer.domElement
-    );
-
-    // Set Render Loop
-    this.gizmo = this.transformControls.getHelper();
-    this.gizmoScene = new THREE.Scene();
-    this.gizmoScene.add(this.gizmo);
-
-    this.clock = new THREE.Clock();
-    this.stats = setupStats();
-    this.renderer.setAnimationLoop(this.renderLoop.bind(this));
-
-    // Event listeners
-    this.attachEventListeners();
-  }
-
-  setScene(ptScene: PtScene) {
-    this.ptScene = ptScene;
-
-    // update shader
-    this.uniforms.uWorld.value.spheres = this.ptScene.spheres;
-    this.uniforms.uMaterials.value = this.ptScene.materials;
-    this.uniforms.uBackgroundColorTop.value = this.ptScene.backgroundColorTop;
-    this.uniforms.uBackgroundColorBottom.value =
-      this.ptScene.backgroundColorBottom;
-    this.shaderCanvas.material.fragmentShader = `#define MAX_SPHERES ${ptScene.spheres.length}
-       ${fragShader}`;
-
-    this.outlinePass.selectedObjects = [];
-    this.outlinePass.renderScene = this.ptScene.scene;
-
-    this.transformControls.detach();
-
-    this.shaderCanvas.resetAccumulation();
-    this.shaderCanvas.material.needsUpdate = true;
-  }
-
-  private setupComposer() {
     this.composer.setSize(window.innerWidth, window.innerHeight);
     this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -208,6 +218,12 @@ export default class PtRenderer {
 
     const gammaCorrectionPass = new ShaderPass(GammaCorrectionShader);
     this.composer.addPass(gammaCorrectionPass);
+  }
+
+  private setupGizmo() {
+    this.gizmo = this.transformControls.getHelper();
+    this.gizmoScene = new THREE.Scene();
+    this.gizmoScene.add(this.gizmo);
   }
 
   private renderLoop() {
@@ -262,6 +278,10 @@ export default class PtRenderer {
     this.transformControls.addEventListener("change", () => {
       if (this.transformControls.dragging)
         this.shaderCanvas.resetAccumulation();
+    });
+
+    this.transformControls.addEventListener("dragging-changed", (event) => {
+      this.orbitControls.enabled = !event.value;
     });
 
     window.addEventListener("resize", () => {
