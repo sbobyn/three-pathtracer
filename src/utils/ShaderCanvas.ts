@@ -21,9 +21,10 @@ export class ShaderCanvas {
     height,
     fragmentShader,
     vertexShader = `
-      varying vec2 vUv;
+      varying vec2 vNDC;
+
       void main() {
-        vUv = uv * 2.0 - 1.0;
+        vNDC = uv * 2.0 - 1.0;
         gl_Position = vec4(position, 1.0);
       }
     `,

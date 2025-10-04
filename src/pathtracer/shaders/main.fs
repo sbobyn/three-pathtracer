@@ -6,7 +6,7 @@ precision highp float;
 
 #define PI 3.141592653
 
-varying vec2 vUv;
+varying vec2 vNDC;
 
 uniform vec2 uResolution;
 uniform vec3 uBackgroundColorTop;
@@ -302,9 +302,9 @@ vec3 rayColor(Ray
 void main() {
     vec3 color = vec3(0);
     for (int s = 0; s < int(uNumSamples); s++) {
-        vec2 seed2 = vUv + vec2(float(s) + float(uFrameCount) * 7.777);
+        vec2 seed2 = vNDC + vec2(float(s) + float(uFrameCount) * 7.777);
         vec2 pixelOffset = hash22(seed2) - 0.5;
-        vec2 uv = vUv + pixelOffset / uResolution; // sample within pixel
+        vec2 uv = vNDC + pixelOffset / uResolution; // sample within pixel
 
         // get pixel sample position
         vec3 pixelSampleDir = normalize(
