@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { createFullScreenPerspectiveCamera } from "../core/createFullscreenCamera";
-import { ShaderCanvas } from "../core/ShaderCanvas";
+import { createFullScreenPerspectiveCamera } from "../utils/createFullscreenCamera";
+import { ShaderCanvas } from "../utils/ShaderCanvas";
 import fragShader from "./shaders/main.fs";
 import {
   EffectComposer,
