@@ -6,17 +6,7 @@ precision highp float;
 
 #define PI 3.141592653
 
-varying vec2 vNDC;
-
-uniform vec2 uResolution;
-uniform vec3 uBackgroundColorTop;
-uniform vec3 uBackgroundColorBottom;
-uniform int uMaxRayDepth;
-uniform float uNumSamples;
-uniform bool uEnableDoF;
-uniform sampler2D uAccumTexture;
-uniform int uFrameCount;
-
+// structs
 struct Camera {
     vec3 position;
     vec3 forward;
@@ -28,32 +18,26 @@ struct Camera {
     float aperture;
 };
 
-uniform Camera uCamera;
-
 struct Ray {
     vec3 origin;
     vec3 direction;
-};
-
-vec3 rayAt(Ray r, float t) {
-    return r.origin + t * r.direction;
-}
-
-float lengthSquared(vec3 a) {
-    return dot(a, a);
-}
-
-struct Material {
-    int type; // 0: lambertian, 1: metal, 2: dielectric
-    vec3 albedo;
-    float fuzz; // (roughness) only for metal
-    float ior; // (index of refraction) only for dielectric
 };
 
 struct Sphere {
     vec3 position;
     float radius;
     int materialId;
+};
+
+struct World {
+    Sphere spheres[MAX_SPHERES];
+};
+
+struct Material {
+    int type; // 0: lambertian, 1: metal, 2: dielectric
+    vec3 albedo;
+    float fuzz; // (roughness) only for metal
+    float ior; // (index of refraction) only for dielectric
 };
 
 struct Hit {
@@ -69,17 +53,34 @@ struct Interval {
     float max;
 };
 
+// varyings
+varying vec2 vNDC;
+
+// uniforms
+uniform vec2 uResolution;
+uniform vec3 uBackgroundColorTop;
+uniform vec3 uBackgroundColorBottom;
+uniform int uMaxRayDepth;
+uniform float uNumSamples;
+uniform bool uEnableDoF;
+uniform sampler2D uAccumTexture;
+uniform int uFrameCount;
+
+uniform Camera uCamera;
+uniform World uWorld;
+uniform Material uMaterials[MAX_SPHERES];
+
+vec3 rayAt(Ray r, float t) {
+    return r.origin + t * r.direction;
+}
+
+float lengthSquared(vec3 a) {
+    return dot(a, a);
+}
+
 bool intervalSurrounds(Interval i, float x) {
     return i.min < x && x < i.max;
 }
-
-struct World {
-    Sphere spheres[MAX_SPHERES];
-};
-
-uniform Material uMaterials[MAX_SPHERES];
-
-uniform World uWorld;
 
 void setFaceNormal(Ray ray, vec3 outwardNormal, inout Hit hit) {
     hit.frontFace = dot(ray.direction, outwardNormal) < 0.0;
