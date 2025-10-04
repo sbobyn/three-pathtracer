@@ -21,6 +21,8 @@ export default class PtGui {
   private materialFolder: GUI;
   private selctedObjectFolder: GUI;
   private selectedRadiusGUI: Controller;
+  private backgroundColorTopGUI: Controller;
+  private backgroundColorBottomGUI: Controller;
 
   constructor(ptRenderer: PtRenderer, ptScene: PtScene) {
     this.selectedObject = null;
@@ -41,6 +43,8 @@ export default class PtGui {
         // reset GUI state
         this.intersectGroup = newScene.intersectGroup;
         this.selctedObjectFolder.hide();
+        this.backgroundColorTopGUI.setValue(newScene.backgroundColorTop);
+        this.backgroundColorBottomGUI.setValue(newScene.backgroundColorBottom);
 
         // swap in renderer
         ptRenderer.setScene(newScene);
@@ -52,7 +56,7 @@ export default class PtGui {
       .onChange(() => {
         ptRenderer.shaderDemo.resetAccumulation();
       });
-    this.gui
+    this.backgroundColorTopGUI = this.gui
       .addColor(ptRenderer.settings, "backgroundColorTop")
       .onChange((value: string | number | THREE.Color) => {
         const color = new THREE.Color(value);
@@ -61,7 +65,7 @@ export default class PtGui {
         ptRenderer.shaderDemo.resetAccumulation();
       });
 
-    this.gui
+    this.backgroundColorBottomGUI = this.gui
       .addColor(ptRenderer.settings, "backgroundColorBottom")
       .onChange((value: string | number | THREE.Color) => {
         const color = new THREE.Color(value);
