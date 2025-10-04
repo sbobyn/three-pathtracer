@@ -57,11 +57,18 @@ export default class PtRenderer {
       focusDistance: 1.0,
     };
 
+    // this.camera = createFullScreenPerspectiveCamera({
+    //   position: new THREE.Vector3(0, 0.5, 2),
+    //   lookAt: new THREE.Vector3(0, 0.5, 0),
+    //   far: 10000,
+    // });
+
     this.camera = createFullScreenPerspectiveCamera({
-      position: new THREE.Vector3(0, 0.5, 2),
-      lookAt: new THREE.Vector3(0, 0.5, 0),
+      position: new THREE.Vector3(13, 2, 3),
+      lookAt: new THREE.Vector3(0, 0, 0),
       far: 10000,
     });
+    this.camera.fov = 20;
 
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
@@ -104,7 +111,7 @@ export default class PtRenderer {
           spheres: this.ptScene.spheres,
         },
       },
-      uNumSamples: { value: 10 },
+      uNumSamples: { value: 1 },
       uMaxRayDepth: { value: 10 },
       uMaterials: { value: this.ptScene.materials },
       uBackgroundColorTop: { value: this.ptScene.backgroundColorTop },
@@ -219,12 +226,12 @@ export default class PtRenderer {
       this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     });
 
-    this.controls?.addEventListener("change", () => {
+    this.controls.addEventListener("change", () => {
       this.shaderDemo.resetAccumulation();
     });
 
     this.transformControls.addEventListener("change", () => {
-      this.shaderDemo.resetAccumulation();
+      if (this.transformControls.dragging) this.shaderDemo.resetAccumulation();
     });
 
     window.addEventListener("resize", () => {

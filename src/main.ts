@@ -8,6 +8,7 @@ document.querySelector("#app")?.appendChild(canvas);
 
 // Set up scene objects
 
-const ptScene = PresetPtScenes.createRTIOWSimpleScene();
+// const ptScene = PresetPtScenes.createRTIOWSimpleScene();
+const ptScene = PresetPtScenes.createRTIOWPart1FinalScene();
 const ptRenderer = new PtRenderer(canvas, ptScene);
 const ptGui = new PtGui(ptRenderer, ptScene);
