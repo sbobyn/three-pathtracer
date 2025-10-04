@@ -332,7 +332,7 @@ void main() {
 
     color /= uNumSamples;
 
-    if (uFrameCount > 0) {
+    if (uFrameCount > 1) {
         vec3 accumColor = texture2D(uAccumTexture, gl_FragCoord.xy / uResolution).rgb;
         color = mix(accumColor, color, 1.0 / float(uFrameCount + 1));
     }

@@ -172,6 +172,27 @@ export default class PtRenderer {
     this.attachEventListeners();
   }
 
+  setScene(ptScene: PtScene) {
+    this.ptScene = ptScene;
+
+    // update shader
+    this.uniforms.uWorld.value.spheres = this.ptScene.spheres;
+    this.uniforms.uMaterials.value = this.ptScene.materials;
+    this.uniforms.uBackgroundColorTop.value = this.ptScene.backgroundColorTop;
+    this.uniforms.uBackgroundColorBottom.value =
+      this.ptScene.backgroundColorBottom;
+    this.shaderDemo.material.fragmentShader = `#define MAX_SPHERES ${ptScene.spheres.length}
+       ${fragShader}`;
+
+    this.outlinePass.selectedObjects = [];
+    this.outlinePass.renderScene = this.ptScene.scene;
+
+    this.transformControls.detach();
+
+    this.shaderDemo.resetAccumulation();
+    this.shaderDemo.material.needsUpdate = true;
+  }
+
   private setupComposer() {
     this.composer.setSize(window.innerWidth, window.innerHeight);
     this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));

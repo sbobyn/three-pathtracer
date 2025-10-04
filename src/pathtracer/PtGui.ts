@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { GUI, Controller } from "lil-gui";
 import PtRenderer from "./PtRenderer";
 import PtScene from "./PtScene";
+import { PresetPtScenes } from "./PresetPtScenes";
 
 const materialLabelDict = {
   0: "Lambert",
@@ -28,6 +29,23 @@ export default class PtGui {
     this.intersectGroup = ptScene.intersectGroup;
 
     this.gui = new GUI({ title: "Settings" });
+
+    let currentSceneName = { value: "Part1Final" };
+
+    this.gui
+      .add(currentSceneName, "value", Object.keys(PresetPtScenes))
+      .name("Scene")
+      .onChange((sceneKey: string) => {
+        const newScene = PresetPtScenes[sceneKey]();
+
+        // reset GUI state
+        this.intersectGroup = newScene.intersectGroup;
+        this.selctedObjectFolder.hide();
+
+        // swap in renderer
+        ptRenderer.setScene(newScene);
+        ptRenderer.shaderDemo.resetAccumulation();
+      });
 
     const raytracingToggleGUI = this.gui
       .add(ptRenderer.settings, "raytracingEnabled")
@@ -226,8 +244,6 @@ export default class PtGui {
       ptRenderer.transformControls.attach(this.selectedObject);
       this.selctedObjectFolder.show();
       // radius display must be manually updated
-
-      console.log(this.selectedObject.index);
 
       ptRenderer.settings.selectedRadius =
         ptScene.spheres[this.selectedObject.index].radius;

@@ -3,7 +3,7 @@ import * as THREE from "three";
 export class ShaderCanvas {
   private scene: THREE.Scene;
   private canvasCamera: THREE.OrthographicCamera;
-  private material: THREE.ShaderMaterial;
+  material: THREE.ShaderMaterial;
   private clock = new THREE.Clock();
   private width: number;
   private height: number;

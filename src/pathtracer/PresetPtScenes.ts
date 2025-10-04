@@ -3,8 +3,8 @@ import PtScene from "./PtScene";
 import PtSphere from "./PtSphere";
 import PtMaterial from "./PtMaterial";
 
-export default class PresetPtScenes {
-  static createRTIOWSimpleScene(): PtScene {
+export const PresetPtScenes: { [key: string]: () => PtScene } = {
+  Part1Simple: () => {
     const spheres: PtSphere[] = [
       new PtSphere(new THREE.Vector3(0, -100.5, 0), 100, 0), // Ground
       new PtSphere(new THREE.Vector3(0, 0, 0), 0.5, 1), // Center
@@ -19,9 +19,9 @@ export default class PresetPtScenes {
     ];
 
     return new PtScene(spheres, materials);
-  }
+  },
 
-  static createRTIOWPart1FinalScene(): PtScene {
+  Part1Final: () => {
     const spheres: PtSphere[] = [
       new PtSphere(new THREE.Vector3(0, -1000, 0), 1000, 0), // Ground
     ];
@@ -87,5 +87,5 @@ export default class PresetPtScenes {
     );
 
     return new PtScene(spheres, materials);
-  }
-}
+  },
+};
