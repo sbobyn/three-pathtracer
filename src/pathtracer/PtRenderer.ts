@@ -12,6 +12,8 @@ import {
   OrbitControls,
 } from "three/examples/jsm/Addons.js";
 import PtScene from "./PtScene";
+import Stats from "stats.js";
+import { setupStats } from "../utils/setupStats";
 
 export default class PtRenderer {
   public ptScene: PtScene;
@@ -40,6 +42,8 @@ export default class PtRenderer {
   private cameraUp: THREE.Vector3;
   private cameraRight: THREE.Vector3;
   private worldUp: THREE.Vector3;
+
+  private stats: Stats;
 
   constructor(canvas: HTMLCanvasElement, ptScene: PtScene) {
     this.ptScene = ptScene;
@@ -161,7 +165,11 @@ export default class PtRenderer {
     this.gizmoScene.add(this.gizmo);
 
     this.clock = new THREE.Clock();
+    this.stats = setupStats();
     this.renderer.setAnimationLoop(this.renderLoop.bind(this));
+
+    // Event listeners
+    this.attachEventListeners();
   }
 
   private setupComposer() {
@@ -182,6 +190,7 @@ export default class PtRenderer {
   }
 
   private renderLoop() {
+    this.stats.begin();
     this.renderer.clear();
 
     this.controls?.update();
@@ -206,8 +215,7 @@ export default class PtRenderer {
     this.composer.render();
     this.renderer.render(this.gizmoScene, this.camera);
 
-    // Event listeners
-    this.attachEventListeners();
+    this.stats.end();
   }
 
   private attachEventListeners() {
