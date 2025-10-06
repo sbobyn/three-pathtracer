@@ -31,6 +31,8 @@ export default class PtApp {
   private backgroundColorBottomGUI: Controller;
   private fovGUI: Controller;
   private toggleDoFGUI: Controller;
+  private transformControlGui: Controller;
+  private numSamplesGUI: Controller;
 
   private activePtScene: PtScene;
 
@@ -68,6 +70,8 @@ export default class PtApp {
         this.backgroundColorBottomGUI.setValue(newScene.backgroundColorBottom);
         this.fovGUI.setValue(newScene.camera.fov);
         this.toggleDoFGUI.setValue(false);
+        this.transformControlGui.setValue("translate");
+        this.numSamplesGUI.setValue(1);
 
         // swap in renderer
         ptRenderer.setScene(newScene);
@@ -181,7 +185,7 @@ export default class PtApp {
 
     this.selctedObjectFolder = this.gui.addFolder("Selected Object");
 
-    this.selctedObjectFolder
+    this.transformControlGui = this.selctedObjectFolder
       .add(ptRenderer.transformControls, "mode", ["translate", "scale"])
       .name("transform mode")
       .onChange((value: string) => {

@@ -162,10 +162,15 @@ export class PtRenderer {
     this.orbitControls.rotateSpeed = 0.5;
     // this.orbitControls.enableDamping = true;
 
-    this.transformControls = new TransformControls(
-      this.camera,
-      this.renderer.domElement
-    );
+    if (!this.transformControls) {
+      this.transformControls = new TransformControls(
+        this.camera,
+        this.renderer.domElement
+      );
+    } else {
+      this.transformControls.camera = this.camera;
+      this.transformControls.detach();
+    }
   }
 
   private setupCamera() {
