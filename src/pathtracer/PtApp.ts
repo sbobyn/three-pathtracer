@@ -165,7 +165,7 @@ export default class PtApp {
       });
     if (!settings.enableDepthOfField) apertureGUI.disable();
     const focusDistGUI = raytracingSettingsFolder
-      .add(settings, "focusDistance", 0.1, 10, 0.1)
+      .add(settings, "focusDistance", 0.1, 20, 0.1)
       .onChange((value: number) => {
         ptRenderer.uniforms.uCamera.value.focusDistance = value;
         ptRenderer.shaderCanvas.resetAccumulation();
