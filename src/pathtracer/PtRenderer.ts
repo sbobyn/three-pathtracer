@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { createFullScreenPerspectiveCamera } from "../utils/createFullscreenCamera";
 import { ShaderCanvas } from "../utils/ShaderCanvas";
 import fragShader from "./shaders/main.fs";
 import {
@@ -14,6 +13,7 @@ import {
 import PtScene from "./PtScene";
 import Stats from "stats.js";
 import { setupStats } from "../utils/setupStats";
+import type { PtState } from "./PtState";
 
 export default class PtRenderer {
   public ptScene: PtScene;
@@ -47,12 +47,12 @@ export default class PtRenderer {
 
   private canvas: HTMLCanvasElement;
 
-  constructor(canvas: HTMLCanvasElement, ptScene: PtScene) {
+  constructor(canvas: HTMLCanvasElement, ptScene: PtScene, ptState: PtState) {
     this.canvas = canvas;
     this.ptScene = ptScene;
     this.camera = ptScene.camera;
 
-    this.setupSettings();
+    this.settings = ptState;
 
     this.setupRenderer();
     this.setupControls();
@@ -99,7 +99,6 @@ export default class PtRenderer {
   }
 
   reset() {
-    this.setupSettings();
     this.setupControls();
     this.setupCamera();
     this.setUniforms();
@@ -124,24 +123,10 @@ export default class PtRenderer {
     });
   }
 
-  private setupSettings() {
-    this.settings = {
-      pathtracingEnabled: true,
-      selectedPosition: new THREE.Vector3(),
-      selectedRadius: 0,
-      selectedColor: "#000000",
-      selectedFuzz: 0,
-      backgroundColorTop: this.ptScene.backgroundColorTop,
-      backgroundColorBottom: this.ptScene.backgroundColorBottom,
-      enableDepthOfField: false,
-      aperture: 0.0,
-      focusDistance: 1.0,
-    };
-  }
-
   private setupControls() {
     this.orbitControls = new OrbitControls(this.camera, this.canvas);
-    this.orbitControls.enableDamping = true;
+    this.orbitControls.rotateSpeed = 0.5;
+    // this.orbitControls.enableDamping = true;
 
     this.transformControls = new TransformControls(
       this.camera,

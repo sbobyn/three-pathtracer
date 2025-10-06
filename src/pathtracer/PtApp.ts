@@ -3,6 +3,7 @@ import { GUI, Controller } from "lil-gui";
 import PtRenderer from "./PtRenderer";
 import PtScene from "./PtScene";
 import { PresetPtScenes } from "./PresetPtScenes";
+import { defaultState, type PtState } from "./PtState";
 
 const materialLabelDict = {
   0: "Lambert",
@@ -10,8 +11,12 @@ const materialLabelDict = {
   2: "Dielectric",
 };
 
-export default class PtGui {
+export default class PtApp {
   private selectedObject: THREE.Object3D | null;
+  private selectedPosition: THREE.Vector3;
+  private selectedRadius: number;
+  private selectedColor: string;
+
   private raycaster: THREE.Raycaster;
   private mouse: THREE.Vector2;
   private intersectGroup: THREE.Group;
@@ -26,11 +31,19 @@ export default class PtGui {
 
   private activePtScene: PtScene;
 
-  constructor(ptRenderer: PtRenderer, ptScene: PtScene) {
+  constructor(canvas: HTMLCanvasElement) {
+    const ptScene = PresetPtScenes.Part1Final();
+    const settings = defaultState;
+    const ptRenderer = new PtRenderer(canvas, ptScene, settings);
+
     this.selectedObject = null;
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
     this.intersectGroup = ptScene.intersectGroup;
+    this.selectedPosition = new THREE.Vector3(-1, -1, -1);
+    this.selectedRadius = -1;
+    this.selectedColor = "";
+
     this.activePtScene = ptScene;
 
     this.gui = new GUI({ title: "Settings" });
@@ -55,28 +68,30 @@ export default class PtGui {
       });
 
     const raytracingToggleGUI = this.gui
-      .add(ptRenderer.settings, "pathtracingEnabled")
+      .add(settings, "pathtracingEnabled")
       .onChange(() => {
         ptRenderer.shaderCanvas.resetAccumulation();
       });
     this.backgroundColorTopGUI = this.gui
-      .addColor(ptRenderer.settings, "backgroundColorTop")
+      .addColor(settings, "backgroundColorTop")
       .onChange((value: string | number | THREE.Color) => {
         const color = new THREE.Color(value);
         this.activePtScene.scene.background = color;
+        ptRenderer.uniforms.uBackgroundColorTop.value = color;
         this.activePtScene.dirLight.color = color;
         ptRenderer.shaderCanvas.resetAccumulation();
       });
 
     this.backgroundColorBottomGUI = this.gui
-      .addColor(ptRenderer.settings, "backgroundColorBottom")
+      .addColor(settings, "backgroundColorBottom")
       .onChange((value: string | number | THREE.Color) => {
         const color = new THREE.Color(value);
         ptRenderer.uniforms.uBackgroundColorBottom.value = color;
         ptRenderer.shaderCanvas.resetAccumulation();
       });
 
-    this.gui.add(ptRenderer.camera, "fov", 10, 120, 1).onChange(() => {
+    this.gui.add(settings, "fov", 10, 120, 1).onChange(() => {
+      ptRenderer.camera.fov = settings.fov;
       ptRenderer.camera.updateProjectionMatrix();
       ptRenderer.uniforms.uCamera.value.halfHeight = Math.tan(
         THREE.MathUtils.degToRad(ptRenderer.camera.fov) / 2
@@ -87,7 +102,7 @@ export default class PtGui {
     });
 
     const raytracingSettingsFolder = this.gui.addFolder("Raytracing Settings");
-    if (!ptRenderer.settings.pathtracingEnabled) {
+    if (!settings.pathtracingEnabled) {
       raytracingSettingsFolder.hide();
     }
 
@@ -126,23 +141,23 @@ export default class PtGui {
     });
 
     const toggleDoFGUI = raytracingSettingsFolder.add(
-      ptRenderer.settings,
+      settings,
       "enableDepthOfField"
     );
     const apertureGUI = raytracingSettingsFolder
-      .add(ptRenderer.settings, "aperture", 0, 0.1, 0.001)
+      .add(settings, "aperture", 0, 0.1, 0.001)
       .onChange((value: number) => {
         ptRenderer.uniforms.uCamera.value.aperture = value;
         ptRenderer.shaderCanvas.resetAccumulation();
       });
-    if (!ptRenderer.settings.enableDepthOfField) apertureGUI.disable();
+    if (!settings.enableDepthOfField) apertureGUI.disable();
     const focusDistGUI = raytracingSettingsFolder
-      .add(ptRenderer.settings, "focusDistance", 0.1, 10, 0.1)
+      .add(settings, "focusDistance", 0.1, 10, 0.1)
       .onChange((value: number) => {
         ptRenderer.uniforms.uCamera.value.focusDistance = value;
         ptRenderer.shaderCanvas.resetAccumulation();
       });
-    if (!ptRenderer.settings.enableDepthOfField) focusDistGUI.disable();
+    if (!settings.enableDepthOfField) focusDistGUI.disable();
     toggleDoFGUI.onChange((value: boolean) => {
       ptRenderer.uniforms.uEnableDoF.value = value;
       if (value) {
@@ -171,22 +186,22 @@ export default class PtGui {
       });
 
     const selectedPositionXGUI = this.selctedObjectFolder
-      .add(ptRenderer.settings.selectedPosition, "x", -1)
+      .add(this.selectedPosition, "x", -1)
       .onChange((value: number) => {
         if (this.selectedObject) this.selectedObject.position.x = value;
       });
     const selectedPositionYGUI = this.selctedObjectFolder
-      .add(ptRenderer.settings.selectedPosition, "y", -1)
+      .add(this.selectedPosition, "y", -1)
       .onChange((value: number) => {
         if (this.selectedObject) this.selectedObject.position.y = value;
       });
     const selectedPositionZGUI = this.selctedObjectFolder
-      .add(ptRenderer.settings.selectedPosition, "z", -1)
+      .add(this.selectedPosition, "z", -1)
       .onChange((value: number) => {
         if (this.selectedObject) this.selectedObject.position.z = value;
       });
     this.selectedRadiusGUI = this.selctedObjectFolder
-      .add(ptRenderer.settings, "selectedRadius", 0)
+      .add(this, "selectedRadius", 0)
       .onChange((value: number) => {
         if (this.selectedObject) {
           this.activePtScene.spheres[this.selectedObject.index].radius = value;
@@ -213,16 +228,21 @@ export default class PtGui {
     ptRenderer.transformControls.mode = "translate";
 
     ptRenderer.transformControls.addEventListener("change", () => {
+      if (!this.selectedObject) {
+        console.warn("No selected object in transformControls change event");
+        return;
+      }
+
       if (ptRenderer.transformControls.mode === "scale") {
         const scale = this.selectedObject.scale.x;
         this.selectedObject.scale.set(scale, scale, scale);
         this.activePtScene.spheres[this.selectedObject.index].radius =
           scale * this.selectedObject.geometry.parameters.radius;
-        ptRenderer.settings.selectedRadius =
+        this.selectedRadius =
           this.activePtScene.spheres[this.selectedObject.index].radius;
         this.selectedRadiusGUI.updateDisplay();
       } else {
-        ptRenderer.settings.selectedPosition.copy(this.selectedObject.position);
+        this.selectedPosition.copy(this.selectedObject.position);
         selectedPositionXGUI.updateDisplay();
         selectedPositionYGUI.updateDisplay();
         selectedPositionZGUI.updateDisplay();
@@ -246,10 +266,10 @@ export default class PtGui {
       this.selctedObjectFolder.show();
       // radius display must be manually updated
 
-      ptRenderer.settings.selectedRadius =
+      this.selectedRadius =
         this.activePtScene.spheres[this.selectedObject.index].radius;
       this.selectedRadiusGUI.updateDisplay();
-      ptRenderer.settings.selectedColor =
+      this.selectedColor =
         this.activePtScene.materials[
           this.activePtScene.spheres[this.selectedObject.index].materialId
         ].albedo.getHexString();
