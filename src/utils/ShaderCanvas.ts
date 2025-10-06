@@ -1,9 +1,10 @@
 import * as THREE from "three";
+import type { PtUniforms } from "../pathtracer/PtRenderer";
 
 export class ShaderCanvas {
   private scene: THREE.Scene;
   private canvasCamera: THREE.OrthographicCamera;
-  private material: THREE.ShaderMaterial;
+  material: THREE.ShaderMaterial;
   private clock = new THREE.Clock();
   private width: number;
   private height: number;
@@ -28,14 +29,14 @@ export class ShaderCanvas {
         gl_Position = vec4(position, 1.0);
       }
     `,
-    uniforms = {},
+    uniforms,
     resolutionScale = 1.0,
   }: {
     width: number;
     height: number;
     fragmentShader: string;
     vertexShader?: string;
-    uniforms?: Record<string, THREE.IUniform<any>>;
+    uniforms: PtUniforms;
     resolutionScale?: number;
   }) {
     this.width = width;
@@ -133,6 +134,10 @@ export class ShaderCanvas {
       this.height * this.resolutionScale
     );
     this.resetAccumulation();
+  }
+
+  public updateUniforms(uniforms: PtUniforms) {
+    Object.assign(this.material.uniforms, uniforms);
   }
 
   public resetAccumulation() {

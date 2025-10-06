@@ -1,8 +1,9 @@
 import * as THREE from "three";
 import { GUI, Controller } from "lil-gui";
-import PtRenderer from "./PtRenderer";
+import { PtRenderer } from "./PtRenderer";
 import PtScene from "./PtScene";
 import { PresetPtScenes } from "./PresetPtScenes";
+import type { PtUniforms } from "./PtRenderer";
 import { defaultState, type PtState } from "./PtState";
 
 const materialLabelDict = {
@@ -28,8 +29,12 @@ export default class PtApp {
   private selectedRadiusGUI: Controller;
   private backgroundColorTopGUI: Controller;
   private backgroundColorBottomGUI: Controller;
+  private fovGUI: Controller;
+  private toggleDoFGUI: Controller;
 
   private activePtScene: PtScene;
+
+  private uniforms: PtUniforms;
 
   constructor(canvas: HTMLCanvasElement) {
     const ptScene = PresetPtScenes.Part1Final();
@@ -61,6 +66,8 @@ export default class PtApp {
         this.selctedObjectFolder.hide();
         this.backgroundColorTopGUI.setValue(newScene.backgroundColorTop);
         this.backgroundColorBottomGUI.setValue(newScene.backgroundColorBottom);
+        this.fovGUI.setValue(newScene.camera.fov);
+        this.toggleDoFGUI.setValue(false);
 
         // swap in renderer
         ptRenderer.setScene(newScene);
@@ -90,7 +97,7 @@ export default class PtApp {
         ptRenderer.shaderCanvas.resetAccumulation();
       });
 
-    this.gui.add(settings, "fov", 10, 120, 1).onChange(() => {
+    this.fovGUI = this.gui.add(settings, "fov", 10, 120, 1).onChange(() => {
       ptRenderer.camera.fov = settings.fov;
       ptRenderer.camera.updateProjectionMatrix();
       ptRenderer.uniforms.uCamera.value.halfHeight = Math.tan(
@@ -106,16 +113,18 @@ export default class PtApp {
       raytracingSettingsFolder.hide();
     }
 
-    raytracingSettingsFolder
-      .add(ptRenderer.uniforms.uNumSamples, "value", 1, 20, 1)
+    this.numSamplesGUI = raytracingSettingsFolder
+      .add(settings, "numSamples", 1, 20, 1)
       .onChange(() => {
+        ptRenderer.uniforms.uNumSamples.value = settings.numSamples;
         ptRenderer.shaderCanvas.resetAccumulation();
       })
       .name("Samples");
 
     raytracingSettingsFolder
-      .add(ptRenderer.uniforms.uMaxRayDepth, "value", 1, 20, 1)
+      .add(settings, "maxRayDepth", 1, 20, 1)
       .onChange(() => {
+        ptRenderer.uniforms.uMaxRayDepth.value = settings.maxRayDepth;
         ptRenderer.shaderCanvas.resetAccumulation();
       })
       .name("Max Ray Depth");
@@ -140,7 +149,7 @@ export default class PtApp {
       }
     });
 
-    const toggleDoFGUI = raytracingSettingsFolder.add(
+    this.toggleDoFGUI = raytracingSettingsFolder.add(
       settings,
       "enableDepthOfField"
     );
@@ -158,7 +167,7 @@ export default class PtApp {
         ptRenderer.shaderCanvas.resetAccumulation();
       });
     if (!settings.enableDepthOfField) focusDistGUI.disable();
-    toggleDoFGUI.onChange((value: boolean) => {
+    this.toggleDoFGUI.onChange((value: boolean) => {
       ptRenderer.uniforms.uEnableDoF.value = value;
       if (value) {
         apertureGUI.enable();

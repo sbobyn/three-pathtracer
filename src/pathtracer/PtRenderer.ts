@@ -15,7 +15,33 @@ import Stats from "stats.js";
 import { setupStats } from "../utils/setupStats";
 import type { PtState } from "./PtState";
 
-export default class PtRenderer {
+export interface PtUniforms {
+  uCamera: {
+    value: {
+      position: THREE.Vector3;
+      up: THREE.Vector3;
+      forward: THREE.Vector3;
+      right: THREE.Vector3;
+      halfWidth: number;
+      halfHeight: number;
+      focusDistance: number;
+      aperture: number;
+    };
+  };
+  uWorld: {
+    value: {
+      spheres: any[];
+    };
+  };
+  uNumSamples: { value: number };
+  uMaxRayDepth: { value: number };
+  uMaterials: { value: any[] };
+  uBackgroundColorTop: { value: THREE.Color };
+  uBackgroundColorBottom: { value: THREE.Color };
+  uEnableDoF: { value: boolean };
+}
+
+export class PtRenderer {
   public ptScene: PtScene;
   public camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
@@ -35,8 +61,8 @@ export default class PtRenderer {
   private gizmo: THREE.Object3D;
   private gizmoScene: THREE.Scene;
 
-  public settings: any;
-  public uniforms: any;
+  public settings: PtState;
+  public uniforms: PtUniforms;
 
   private cameraForward: THREE.Vector3;
   private cameraUp: THREE.Vector3;
@@ -57,7 +83,7 @@ export default class PtRenderer {
     this.setupRenderer();
     this.setupControls();
     this.setupCamera();
-    this.setUniforms();
+    this.uniforms = this.createUniforms();
     this.setupShaderCanvas();
 
     // Setup Post Processing / Composer Passes
@@ -98,11 +124,11 @@ export default class PtRenderer {
     this.reset();
   }
 
-  reset() {
+  private reset() {
     this.setupControls();
     this.setupCamera();
-    this.setUniforms();
-    this.setupShaderCanvas();
+    this.updateUniforms();
+    this.updateShaderCanvas();
 
     this.setupComposer();
     this.outlinePass.selectedObjects = [];
@@ -112,7 +138,7 @@ export default class PtRenderer {
     this.attachEventListeners();
   }
 
-  setupShaderCanvas() {
+  private setupShaderCanvas() {
     this.shaderCanvas = new ShaderCanvas({
       width: window.innerWidth,
       height: window.innerHeight,
@@ -121,6 +147,14 @@ export default class PtRenderer {
       uniforms: this.uniforms,
       resolutionScale: 1.0,
     });
+  }
+
+  private updateShaderCanvas() {
+    this.shaderCanvas.material.fragmentShader = `#define MAX_SPHERES ${this.ptScene.spheres.length}
+       ${fragShader}`;
+    this.shaderCanvas.updateUniforms(this.uniforms);
+    this.shaderCanvas.resetAccumulation();
+    this.shaderCanvas.material.needsUpdate = true;
   }
 
   private setupControls() {
@@ -145,12 +179,16 @@ export default class PtRenderer {
     this.worldUp = new THREE.Vector3(0, 1, 0);
   }
 
-  private setUniforms() {
+  private updateUniforms() {
+    Object.assign(this.uniforms, this.createUniforms());
+  }
+
+  private createUniforms(): PtUniforms {
     const verticalFov = THREE.MathUtils.degToRad(this.camera.fov);
     const halfHeight = Math.tan(verticalFov / 2);
     const halfWidth = halfHeight * this.camera.aspect;
 
-    this.uniforms = {
+    const uniforms: PtUniforms = {
       uCamera: {
         value: {
           position: this.camera.position,
@@ -168,13 +206,14 @@ export default class PtRenderer {
           spheres: this.ptScene.spheres,
         },
       },
-      uNumSamples: { value: 1 },
-      uMaxRayDepth: { value: 10 },
+      uNumSamples: { value: this.settings.numSamples },
+      uMaxRayDepth: { value: this.settings.maxRayDepth },
       uMaterials: { value: this.ptScene.materials },
       uBackgroundColorTop: { value: this.ptScene.backgroundColorTop },
       uBackgroundColorBottom: { value: this.ptScene.backgroundColorBottom },
       uEnableDoF: { value: this.settings.enableDepthOfField },
     };
+    return uniforms;
   }
 
   private setupComposer() {

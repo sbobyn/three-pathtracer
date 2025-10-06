@@ -5,6 +5,8 @@ export interface PtState {
   backgroundColorTop: THREE.Color;
   backgroundColorBottom: THREE.Color;
   fov: number;
+  numSamples: number;
+  maxRayDepth: number;
   enableDepthOfField: boolean;
   aperture: number;
   focusDistance: number;
@@ -15,6 +17,8 @@ export const defaultState: PtState = {
   backgroundColorTop: new THREE.Color(0.7, 0.8, 1.0),
   backgroundColorBottom: new THREE.Color(1.0, 1.0, 1.0),
   fov: 20,
+  numSamples: 1,
+  maxRayDepth: 10,
   enableDepthOfField: false,
   aperture: 0.0,
   focusDistance: 1.0,
