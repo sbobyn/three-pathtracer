@@ -3,7 +3,6 @@ import { GUI, Controller } from "lil-gui";
 import { PtRenderer } from "./PtRenderer";
 import PtScene from "./PtScene";
 import { PresetPtScenes } from "./PresetPtScenes";
-import type { PtUniforms } from "./PtRenderer";
 import { defaultState, type PtState } from "./PtState";
 
 const materialLabelDict = {
