@@ -19,30 +19,30 @@ import type PtUniforms from "./PtUniforms";
 export default class PtRenderer {
   public ptScene: PtScene;
   public camera: THREE.PerspectiveCamera;
-  private renderer: THREE.WebGLRenderer;
+  private renderer!: THREE.WebGLRenderer;
   private clock: THREE.Clock;
 
-  public shaderCanvas: ShaderCanvas;
+  public shaderCanvas!: ShaderCanvas;
 
   private renderTarget: THREE.WebGLRenderTarget;
   private composer: EffectComposer;
-  public ptPass: RenderPass;
-  public renderPass: RenderPass;
-  public outlinePass: OutlinePass;
+  public ptPass!: RenderPass;
+  public renderPass!: RenderPass;
+  public outlinePass!: OutlinePass;
 
-  public orbitControls: OrbitControls;
-  public transformControls: TransformControls;
+  public orbitControls!: OrbitControls;
+  public transformControls!: TransformControls;
 
-  private gizmo: THREE.Object3D;
-  private gizmoScene: THREE.Scene;
+  private gizmo!: THREE.Object3D;
+  private gizmoScene!: THREE.Scene;
 
   public settings: PtState;
   public uniforms: PtUniforms;
 
-  private cameraForward: THREE.Vector3;
-  private cameraUp: THREE.Vector3;
-  private cameraRight: THREE.Vector3;
-  private worldUp: THREE.Vector3;
+  private cameraForward!: THREE.Vector3;
+  private cameraUp!: THREE.Vector3;
+  private cameraRight!: THREE.Vector3;
+  private worldUp!: THREE.Vector3;
 
   private stats: Stats;
 
@@ -104,7 +104,7 @@ export default class PtRenderer {
     this.setupCamera();
     this.updateUniforms();
     this.updateShaderCanvas();
-    this.shaderCanvas.material.needsUpdate = true;
+    this.shaderCanvas.updateMaterial();
 
     this.setupComposer();
     this.outlinePass.selectedObjects = [];
@@ -126,9 +126,9 @@ export default class PtRenderer {
   }
 
   private updateShaderCanvas() {
-    this.shaderCanvas.material.fragmentShader = `#define MAX_SPHERES ${this.ptScene.spheres.length}
-       ${fragShader}`;
-    this.shaderCanvas.resetAccumulation();
+    this.shaderCanvas
+      .setShader(`#define MAX_SPHERES ${this.ptScene.spheres.length}
+       ${fragShader}`);
   }
 
   private setupControls() {

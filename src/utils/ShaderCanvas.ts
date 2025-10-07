@@ -118,6 +118,16 @@ export class ShaderCanvas {
     this.updateRenderTargets();
   }
 
+  public setShader(fragmentShader: string) {
+    this.material.fragmentShader = fragmentShader;
+    this.resetAccumulation();
+    this.material.needsUpdate = true;
+  }
+
+  public updateMaterial() {
+    this.material.needsUpdate = true;
+  }
+
   private updateRenderTargets() {
     const scaledW = this.width * this.resolutionScale;
     const scaledH = this.height * this.resolutionScale;
