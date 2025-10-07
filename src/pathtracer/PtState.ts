@@ -20,7 +20,7 @@ export const defaultState: PtState = {
   fov: 20,
   numSamples: 1,
   maxRayDepth: 10,
-  resolutionScale: 1 / 8,
+  resolutionScale: 1.0,
   enableDepthOfField: false,
   aperture: 0.0,
   focusDistance: 1.0,
