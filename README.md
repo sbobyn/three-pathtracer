@@ -6,6 +6,8 @@ Live demo is available here (TODO).
 
 So far, the Pathtracer closely follows Peter Shirely's [Ray Tracing in One Weekend](https://raytracing.github.io/) (part 1). See the todos below for what's planned next.
 
+![gif demo](three-pathtracer.gif)
+
 ## Detail
 
 The pathtracer itself is contained in `main.fs`. So far, it closely follows RTIOW,
