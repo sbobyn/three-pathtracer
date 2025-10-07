@@ -154,7 +154,6 @@ export class PtRenderer {
        ${fragShader}`;
     this.shaderCanvas.updateUniforms(this.uniforms);
     this.shaderCanvas.resetAccumulation();
-    this.shaderCanvas.material.needsUpdate = true;
   }
 
   private setupControls() {
@@ -293,7 +292,6 @@ export class PtRenderer {
       this.uniforms.uCamera.value.halfWidth = halfWidth;
 
       this.shaderCanvas.setDimensions(window.innerWidth, window.innerHeight);
-      this.shaderCanvas.material.needsUpdate = true;
 
       this.composer.setSize(window.innerWidth, window.innerHeight);
       this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));

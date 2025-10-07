@@ -312,7 +312,6 @@ export default class PtApp {
     );
 
     this.materialFolder.addColor(material, "color").onChange(() => {
-      material.needsUpdate = true;
       this.activePtScene.materials[materialId].albedo = material.color;
       ptRenderer.shaderCanvas.resetAccumulation();
     });
@@ -320,7 +319,6 @@ export default class PtApp {
     if (materialType === "Metal") {
       if ("roughness" in material) {
         this.materialFolder.add(material, "roughness", 0, 1).onChange(() => {
-          material.needsUpdate = true;
           this.activePtScene.materials[materialId].fuzz = material.roughness;
           ptRenderer.shaderCanvas.resetAccumulation();
         });
@@ -330,7 +328,6 @@ export default class PtApp {
     if (materialType === "Dielectric") {
       if ("ior" in material) {
         this.materialFolder.add(material, "ior", 0, 2.5).onChange(() => {
-          material.needsUpdate = true;
           this.activePtScene.materials[materialId].ior = material.ior;
           ptRenderer.shaderCanvas.resetAccumulation();
         });

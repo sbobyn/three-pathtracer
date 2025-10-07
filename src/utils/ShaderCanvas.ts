@@ -96,7 +96,6 @@ export class ShaderCanvas {
     this.material.uniforms.uTime.value = this.clock.getElapsedTime();
     this.material.uniforms.uFrameCount.value++;
     this.material.uniforms.uAccumTexture.value = this.pingRenderTarget.texture;
-    this.material.needsUpdate = true;
 
     renderer.render(this.scene, this.canvasCamera);
     renderer.setRenderTarget(null);
