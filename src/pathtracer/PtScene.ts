@@ -8,11 +8,11 @@ export default class PtScene {
   spheres: PtSphere[];
   materials: PtMaterial[];
 
-  public dirLight: THREE.DirectionalLight;
+  dirLight: THREE.DirectionalLight;
   backgroundColorTop: THREE.Color;
   backgroundColorBottom: THREE.Color;
 
-  public camera: THREE.PerspectiveCamera;
+  camera: THREE.PerspectiveCamera;
 
   constructor(
     spheres: PtSphere[],
