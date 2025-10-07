@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { GUI, Controller } from "lil-gui";
-import { PtRenderer } from "./PtRenderer";
+import PtRenderer from "./PtRenderer";
 import PtScene from "./PtScene";
 import { PresetPtScenes } from "./PresetPtScenes";
 import { defaultState, type PtState } from "./PtState";

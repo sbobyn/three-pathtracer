@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { PtUniforms } from "../pathtracer/PtRenderer";
+import type PtUniforms from "../pathtracer/PtUniforms";
 
 export class ShaderCanvas {
   private scene: THREE.Scene;

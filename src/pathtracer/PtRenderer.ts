@@ -14,34 +14,9 @@ import PtScene from "./PtScene";
 import Stats from "stats.js";
 import { setupStats } from "../utils/setupStats";
 import type { PtState } from "./PtState";
+import type PtUniforms from "./PtUniforms";
 
-export interface PtUniforms {
-  uCamera: {
-    value: {
-      position: THREE.Vector3;
-      up: THREE.Vector3;
-      forward: THREE.Vector3;
-      right: THREE.Vector3;
-      halfWidth: number;
-      halfHeight: number;
-      focusDistance: number;
-      aperture: number;
-    };
-  };
-  uWorld: {
-    value: {
-      spheres: any[];
-    };
-  };
-  uNumSamples: { value: number };
-  uMaxRayDepth: { value: number };
-  uMaterials: { value: any[] };
-  uBackgroundColorTop: { value: THREE.Color };
-  uBackgroundColorBottom: { value: THREE.Color };
-  uEnableDoF: { value: boolean };
-}
-
-export class PtRenderer {
+export default class PtRenderer {
   public ptScene: PtScene;
   public camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
