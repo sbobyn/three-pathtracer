@@ -2,7 +2,7 @@
 
 Toy/demo Realtime WebGL-based Pathtracer integrated with Three.js, for educaitonal purposes.
 
-Live demo is available here (TODO).
+Live demo is available here: https://sbobyn.github.io/three-pathtracer/
 
 So far, the Pathtracer closely follows Peter Shirely's [Ray Tracing in One Weekend](https://raytracing.github.io/) (part 1). See the todos below for what's planned next.
 
