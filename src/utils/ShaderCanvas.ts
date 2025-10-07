@@ -4,7 +4,7 @@ import type { PtUniforms } from "../pathtracer/PtRenderer";
 export class ShaderCanvas {
   private scene: THREE.Scene;
   private canvasCamera: THREE.OrthographicCamera;
-  material: THREE.ShaderMaterial;
+  private material: THREE.ShaderMaterial;
   private clock = new THREE.Clock();
   private width: number;
   private height: number;
@@ -13,7 +13,7 @@ export class ShaderCanvas {
   public screenScene: THREE.Scene;
   public screenCamera: THREE.OrthographicCamera;
 
-  public resolutionScale: number;
+  private resolutionScale: number;
   private pingRenderTarget: THREE.WebGLRenderTarget;
   private pongRenderTarget: THREE.WebGLRenderTarget;
 
@@ -52,8 +52,9 @@ export class ShaderCanvas {
       uniforms: {
         uTime: { value: 0 },
         uResolution: {
-          value: new THREE.Vector2(width, height).multiplyScalar(
-            resolutionScale
+          value: new THREE.Vector2(
+            Math.floor(width * resolutionScale),
+            Math.floor(height * resolutionScale)
           ),
         },
         uAccumTexture: { value: null },
@@ -87,12 +88,6 @@ export class ShaderCanvas {
     this.screenScene = new THREE.Scene();
     this.screenCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.screenScene.add(screenQuad);
-
-    // handle resize event
-    window.addEventListener("resize", () => {
-      this.setDimensions(window.innerWidth, window.innerHeight);
-      this.updateRenderTarget();
-    });
   }
 
   public render(renderer: THREE.WebGLRenderer) {
@@ -101,7 +96,6 @@ export class ShaderCanvas {
     this.material.uniforms.uTime.value = this.clock.getElapsedTime();
     this.material.uniforms.uFrameCount.value++;
     this.material.uniforms.uAccumTexture.value = this.pingRenderTarget.texture;
-    this.material.needsUpdate = true;
 
     renderer.render(this.scene, this.canvasCamera);
     renderer.setRenderTarget(null);
@@ -114,30 +108,28 @@ export class ShaderCanvas {
   }
 
   public setDimensions(width: number, height: number) {
-    this.pingRenderTarget.setSize(width, height);
-    this.pongRenderTarget.setSize(width, height);
-    this.material.uniforms.uResolution.value.set(width, height);
-    this.resetAccumulation();
+    this.width = width;
+    this.height = height;
+    this.updateRenderTargets();
   }
 
-  public updateRenderTarget() {
+  public setResolutionScale(scale: number) {
+    this.resolutionScale = scale;
+    this.updateRenderTargets();
+  }
+
+  private updateRenderTargets() {
+    const scaledW = this.width * this.resolutionScale;
+    const scaledH = this.height * this.resolutionScale;
+
     this.material.uniforms.uResolution.value.set(
-      this.width * this.resolutionScale,
-      this.height * this.resolutionScale
+      Math.floor(scaledW),
+      Math.floor(scaledH)
     );
-    this.pingRenderTarget.setSize(
-      this.width * this.resolutionScale,
-      this.height * this.resolutionScale
-    );
-    this.pongRenderTarget.setSize(
-      this.width * this.resolutionScale,
-      this.height * this.resolutionScale
-    );
-    this.resetAccumulation();
-  }
+    this.pingRenderTarget.setSize(scaledW, scaledH);
+    this.pongRenderTarget.setSize(scaledW, scaledH);
 
-  public updateUniforms(uniforms: PtUniforms) {
-    Object.assign(this.material.uniforms, uniforms);
+    this.resetAccumulation();
   }
 
   public resetAccumulation() {

@@ -7,6 +7,7 @@ export interface PtState {
   fov: number;
   numSamples: number;
   maxRayDepth: number;
+  resolutionScale: number;
   enableDepthOfField: boolean;
   aperture: number;
   focusDistance: number;
@@ -19,6 +20,7 @@ export const defaultState: PtState = {
   fov: 20,
   numSamples: 1,
   maxRayDepth: 10,
+  resolutionScale: 1.0,
   enableDepthOfField: false,
   aperture: 0.0,
   focusDistance: 1.0,

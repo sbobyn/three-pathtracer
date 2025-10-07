@@ -129,6 +129,7 @@ export class PtRenderer {
     this.setupCamera();
     this.updateUniforms();
     this.updateShaderCanvas();
+    this.shaderCanvas.material.needsUpdate = true;
 
     this.setupComposer();
     this.outlinePass.selectedObjects = [];
@@ -145,16 +146,14 @@ export class PtRenderer {
       fragmentShader: `#define MAX_SPHERES ${this.ptScene.spheres.length}
        ${fragShader}`,
       uniforms: this.uniforms,
-      resolutionScale: 1.0,
+      resolutionScale: this.settings.resolutionScale,
     });
   }
 
   private updateShaderCanvas() {
     this.shaderCanvas.material.fragmentShader = `#define MAX_SPHERES ${this.ptScene.spheres.length}
        ${fragShader}`;
-    this.shaderCanvas.updateUniforms(this.uniforms);
     this.shaderCanvas.resetAccumulation();
-    this.shaderCanvas.material.needsUpdate = true;
   }
 
   private setupControls() {
@@ -185,7 +184,30 @@ export class PtRenderer {
   }
 
   private updateUniforms() {
-    Object.assign(this.uniforms, this.createUniforms());
+    const verticalFov = THREE.MathUtils.degToRad(this.camera.fov);
+    const halfHeight = Math.tan(verticalFov / 2);
+    const halfWidth = halfHeight * this.camera.aspect;
+
+    this.uniforms.uCamera.value.position = this.camera.position;
+    this.uniforms.uCamera.value.up = this.cameraUp;
+    this.uniforms.uCamera.value.forward = this.cameraForward;
+    this.uniforms.uCamera.value.right = this.cameraRight;
+    this.uniforms.uCamera.value.halfWidth = halfWidth;
+    this.uniforms.uCamera.value.halfHeight = halfHeight;
+    this.uniforms.uCamera.value.focusDistance = this.settings.focusDistance;
+    this.uniforms.uCamera.value.aperture = this.settings.aperture;
+
+    this.uniforms.uWorld.value.spheres = this.ptScene.spheres;
+
+    this.uniforms.uNumSamples.value = this.settings.numSamples;
+    this.uniforms.uMaxRayDepth.value = this.settings.maxRayDepth;
+    this.uniforms.uMaterials.value = this.ptScene.materials;
+
+    this.uniforms.uBackgroundColorTop.value = this.ptScene.backgroundColorTop;
+    this.uniforms.uBackgroundColorBottom.value =
+      this.ptScene.backgroundColorBottom;
+
+    this.uniforms.uEnableDoF.value = this.settings.enableDepthOfField;
   }
 
   private createUniforms(): PtUniforms {
@@ -293,11 +315,12 @@ export class PtRenderer {
       this.uniforms.uCamera.value.halfWidth = halfWidth;
 
       this.shaderCanvas.setDimensions(window.innerWidth, window.innerHeight);
-    });
 
-    window.addEventListener("resize", () => {
       this.composer.setSize(window.innerWidth, window.innerHeight);
       this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     });
 
     this.orbitControls.addEventListener("change", () => {
@@ -311,11 +334,6 @@ export class PtRenderer {
 
     this.transformControls.addEventListener("dragging-changed", (event) => {
       this.orbitControls.enabled = !event.value;
-    });
-
-    window.addEventListener("resize", () => {
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     });
   }
 }
