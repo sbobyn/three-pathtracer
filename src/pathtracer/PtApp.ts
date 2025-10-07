@@ -41,6 +41,8 @@ export default class PtApp {
   constructor(canvas: HTMLCanvasElement) {
     const ptScene = PresetPtScenes.Part1Simple();
     const settings = defaultState;
+    settings.fov = ptScene.camera.fov; // TODO : fix. add cleaner init of PtState
+
     const ptRenderer = new PtRenderer(canvas, ptScene, settings);
 
     this.selectedObject = null;
