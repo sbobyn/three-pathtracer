@@ -132,10 +132,6 @@ export class ShaderCanvas {
     this.resetAccumulation();
   }
 
-  public updateUniforms(uniforms: PtUniforms) {
-    Object.assign(this.material.uniforms, uniforms);
-  }
-
   public resetAccumulation() {
     this.material.uniforms.uFrameCount.value = 0;
   }
