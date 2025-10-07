@@ -36,8 +36,6 @@ export default class PtApp {
 
   private activePtScene: PtScene;
 
-  private uniforms: PtUniforms;
-
   constructor(canvas: HTMLCanvasElement) {
     const ptScene = PresetPtScenes.Part1Simple();
     const settings = defaultState;
