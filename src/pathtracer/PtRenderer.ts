@@ -145,7 +145,7 @@ export class PtRenderer {
       fragmentShader: `#define MAX_SPHERES ${this.ptScene.spheres.length}
        ${fragShader}`,
       uniforms: this.uniforms,
-      resolutionScale: 1.0,
+      resolutionScale: this.settings.resolutionScale,
     });
   }
 
@@ -293,11 +293,13 @@ export class PtRenderer {
       this.uniforms.uCamera.value.halfWidth = halfWidth;
 
       this.shaderCanvas.setDimensions(window.innerWidth, window.innerHeight);
-    });
+      this.shaderCanvas.material.needsUpdate = true;
 
-    window.addEventListener("resize", () => {
       this.composer.setSize(window.innerWidth, window.innerHeight);
       this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     });
 
     this.orbitControls.addEventListener("change", () => {
@@ -311,11 +313,6 @@ export class PtRenderer {
 
     this.transformControls.addEventListener("dragging-changed", (event) => {
       this.orbitControls.enabled = !event.value;
-    });
-
-    window.addEventListener("resize", () => {
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     });
   }
 }
