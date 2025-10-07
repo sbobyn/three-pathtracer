@@ -39,7 +39,7 @@ export default class PtApp {
   private uniforms: PtUniforms;
 
   constructor(canvas: HTMLCanvasElement) {
-    const ptScene = PresetPtScenes.Part1Final();
+    const ptScene = PresetPtScenes.Part1Simple();
     const settings = defaultState;
     const ptRenderer = new PtRenderer(canvas, ptScene, settings);
 
@@ -55,7 +55,7 @@ export default class PtApp {
 
     this.gui = new GUI({ title: "Settings" });
 
-    let currentSceneName = { value: "Part1Final" };
+    let currentSceneName = { value: "Part1Simple" };
 
     this.gui
       .add(currentSceneName, "value", Object.keys(PresetPtScenes))
