@@ -229,7 +229,7 @@ export default class PtApp {
     this.selctedObjectFolder.hide();
 
     // on this.mouse down check for intersection
-    window.addEventListener("mousedown", (e) => {
+    window.addEventListener("pointerdown", (e) => {
       if (this.gui.domElement.contains(e.target as Node)) return;
       if (ptRenderer.transformControls.dragging) return;
 
