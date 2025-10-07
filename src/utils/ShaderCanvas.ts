@@ -52,8 +52,9 @@ export class ShaderCanvas {
       uniforms: {
         uTime: { value: 0 },
         uResolution: {
-          value: new THREE.Vector2(width, height).multiplyScalar(
-            resolutionScale
+          value: new THREE.Vector2(
+            Math.floor(width * resolutionScale),
+            Math.floor(height * resolutionScale)
           ),
         },
         uAccumTexture: { value: null },
@@ -122,7 +123,10 @@ export class ShaderCanvas {
     const scaledW = this.width * this.resolutionScale;
     const scaledH = this.height * this.resolutionScale;
 
-    this.material.uniforms.uResolution.value.set(scaledW, scaledH);
+    this.material.uniforms.uResolution.value.set(
+      Math.floor(scaledW),
+      Math.floor(scaledH)
+    );
     this.pingRenderTarget.setSize(scaledW, scaledH);
     this.pongRenderTarget.setSize(scaledW, scaledH);
 
